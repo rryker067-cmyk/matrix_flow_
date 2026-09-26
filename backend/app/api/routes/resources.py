@@ -9,6 +9,7 @@ from app.core.security import get_current_user
 from app.repositories.api_record_repository import api_record_repository
 from app.schemas.branch import BranchCreate
 from app.schemas.company import CompanyCreate
+from app.schemas.configuration import ConfigurationCreate
 from app.schemas.inventory import InventoryCreate
 from app.schemas.matrix import MatrixCreate
 from app.schemas.product import ProductCreate
@@ -18,7 +19,7 @@ from app.schemas.vector import VectorCreate
 router = APIRouter(dependencies=[Depends(get_current_user)])
 COLLECTIONS = {
     "companies", "branches", "products", "sales", "inventory",
-    "vectors", "matrices", "operations",
+    "vectors", "matrices", "operations", "configurations",
 }
 PAYLOAD_MODELS = {
     "companies": CompanyCreate,
@@ -28,6 +29,7 @@ PAYLOAD_MODELS = {
     "inventory": InventoryCreate,
     "vectors": VectorCreate,
     "matrices": MatrixCreate,
+    "configurations": ConfigurationCreate,
 }
 
 

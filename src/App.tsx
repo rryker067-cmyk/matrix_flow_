@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
+import { OperationsPage } from './pages/operations-page';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import './App.css';
 
@@ -32,6 +33,8 @@ export default function App() {
           {/* 3. SISTEMA PRINCIPAL / DASHBOARD PROTEGIDO */}
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/operaciones" element={<OperationsPage />} />
+            <Route path="/combinaciones-lineales" element={<OperationsPage />} />
             <Route path="*" element={<PlaceholderPage />} />
           </Route>
 

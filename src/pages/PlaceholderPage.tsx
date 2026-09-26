@@ -28,7 +28,7 @@ const modules: Record<string, ModuleConfig> = {
   'combinaciones-lineales': { title: 'Combinaciones lineales', description: 'Historial de cálculos lineales.', singular: 'operación', collection: 'operations', readOnly: true, columns: [{ key: 'operation', label: 'Operación' }, { key: 'result', label: 'Resultado' }, { key: 'status', label: 'Estado' }] },
   reportes: { title: 'Reportes', description: 'Métricas calculadas a partir de los datos persistidos.', singular: 'reporte', report: true, readOnly: true, columns: [{ key: 'metric', label: 'Métrica' }, { key: 'value', label: 'Valor' }] },
   usuarios: { title: 'Usuarios', description: 'Usuarios y roles del sistema.', singular: 'usuario', collection: 'users', endpoint: apiRoutes.users, readOnly: true, columns: [{ key: 'name', label: 'Nombre' }, { key: 'email', label: 'Correo' }, { key: 'role', label: 'Rol' }, { key: 'status', label: 'Estado' }] },
-  configuracion: { title: 'Configuración', description: 'Configuración del espacio de trabajo.', singular: 'parámetro', readOnly: true, columns: [{ key: 'name', label: 'Parámetro' }, { key: 'value', label: 'Valor' }] },
+  configuracion: { title: 'Configuración', description: 'Configuración del espacio de trabajo.', singular: 'parámetro', collection: 'configurations', columns: [{ key: 'name', label: 'Parámetro' }, { key: 'value', label: 'Valor' }] },
 }
 
 function displayValue(value: unknown): string {

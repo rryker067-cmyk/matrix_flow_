@@ -15,3 +15,6 @@ def test_operation_endpoint():
     response = client.post("/api/v1/operations", json={"operation": "dot_product", "data": [1, 2], "other": [3, 4]})
     assert response.status_code == 200
     assert response.json()["result"] == 11.0
+    history = client.get("/api/v1/resources/operations")
+    assert history.status_code == 200
+    assert history.json()[0]["result"] == 11.0

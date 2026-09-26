@@ -46,3 +46,24 @@ def test_business_endpoints_validate_values():
     )
 
     assert response.status_code == 422
+
+
+def test_configuration_records_support_persistent_crud():
+    created = client.post(
+        "/api/v1/resources/configurations",
+        json={"name": "Idioma", "value": "es"},
+    )
+    assert created.status_code == 201
+    record_id = created.json()["id"]
+    assert client.get("/api/v1/resources/configurations").json() == [
+        {"name": "Idioma", "value": "es", "id": record_id}
+    ]
+
+    updated = client.put(
+        f"/api/v1/resources/configurations/{record_id}",
+        json={"name": "Idioma", "value": "en"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["value"] == "en"
+    assert client.delete(f"/api/v1/resources/configurations/{record_id}").status_code == 204
+    assert client.get("/api/v1/resources/configurations").json() == []
