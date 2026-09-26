@@ -42,3 +42,50 @@ def test_login_checks_persisted_user_and_password():
     finally:
         app.dependency_overrides[get_current_user] = lambda: None
         settings.jwt_secret_key = old_secret
+
+
+def test_register_creates_member_and_allows_login():
+    old_secret = settings.jwt_secret_key
+    settings.jwt_secret_key = "local-test-signing-key-at-least-32-chars"
+    try:
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "  New   Member  ",
+                "email": "NEW.MEMBER@example.test",
+                "password": "correct-password-123",
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["user"] == {
+            "email": "new.member@example.test",
+            "name": "New Member",
+            "role": "member",
+        }
+
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "new.member@example.test", "password": "correct-password-123"},
+        )
+        assert login_response.status_code == 200
+        assert login_response.json()["user"]["name"] == "New Member"
+    finally:
+        settings.jwt_secret_key = old_secret
+
+
+def test_register_rejects_duplicate_email_and_short_password():
+    old_secret = settings.jwt_secret_key
+    settings.jwt_secret_key = "local-test-signing-key-at-least-32-chars"
+    try:
+        payload = {
+            "full_name": "First Member",
+            "email": "member@example.test",
+            "password": "correct-password-123",
+        }
+        assert client.post("/api/v1/auth/register", json=payload).status_code == 201
+        duplicate = {**payload, "email": "MEMBER@example.test"}
+        assert client.post("/api/v1/auth/register", json=duplicate).status_code == 409
+        invalid = {**payload, "email": "short@example.test", "password": "tiny"}
+        assert client.post("/api/v1/auth/register", json=invalid).status_code == 422
+    finally:
+        settings.jwt_secret_key = old_secret

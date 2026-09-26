@@ -7,7 +7,11 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.api.routes import api_router
 
-app = FastAPI(title="MatrixFlow Enterprise API", version="0.1.0", description="API de ventas, inventario y algebra lineal empresarial")
+app = FastAPI(
+    title=settings.app_name,
+    version="0.1.0",
+    description="API de ventas, inventario y algebra lineal empresarial",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix=settings.api_prefix)
 
 
 @app.get("/health", tags=["health"])

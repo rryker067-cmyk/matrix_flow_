@@ -7,6 +7,7 @@ export const apiRoutes = {
   ready: getApiUrl('/ready'),
   auth: {
     login: getApiUrl('/api/v1/auth/login'),
+    register: getApiUrl('/api/v1/auth/register'),
   },
   users: getApiUrl('/api/v1/users'),
   companies: getApiUrl('/api/v1/companies'),

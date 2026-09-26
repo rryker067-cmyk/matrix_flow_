@@ -12,6 +12,7 @@
 }
 
 .login-card {
+  position: relative;
   width: 100%;
   max-width: 440px;
   background-color: rgba(15, 23, 42, 0.92);
@@ -21,6 +22,29 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
   padding: 2.5rem;
   box-sizing: border-box;
+}
+
+.login-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #94a3b8;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.login-close:hover,
+.login-close:focus-visible {
+  color: #fff;
+  border-color: #38bdf8;
+  outline: none;
 }
 
 .login-header {

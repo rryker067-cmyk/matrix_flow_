@@ -81,8 +81,8 @@ export function AppLayout() {
         
         {/* Menú de usuario original */}
         <button className="user-menu" aria-label="Abrir menú de usuario" type="button">
-          <span className="avatar">{user?.email.slice(0, 2).toUpperCase() ?? 'MF'}</span>
-          <span className="user-summary"><b>{user?.email ?? 'Usuario'}</b><small>{user?.role ?? 'Cuenta'}</small></span>
+          <span className="avatar">{user?.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() ?? 'MF'}</span>
+          <span className="user-summary"><b>{user?.name ?? 'Usuario'}</b><small>{user?.email ?? 'Cuenta'}</small></span>
           <span>⌄</span>
         </button>
 

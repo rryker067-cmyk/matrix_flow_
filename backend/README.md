@@ -37,6 +37,7 @@ En Vercel configura solo `VITE_API_URL` con la URL pública del servicio Render.
 ## Endpoints iniciales
 
 - `POST /api/v1/auth/login`
+- `POST /api/v1/auth/register` (cuentas nuevas con rol `member`)
 - `GET|POST /api/v1/companies`
 - `GET|POST /api/v1/vectors`
 - `GET|POST /api/v1/matrices`

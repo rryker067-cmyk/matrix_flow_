@@ -9,20 +9,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const token = localStorage.getItem('matrixflow_token');
     const email = localStorage.getItem('matrixflow_email');
     if (!token || !email) return null;
-    return { email, token, role: localStorage.getItem('matrixflow_role') || 'user' };
+    return {
+      email,
+      name: localStorage.getItem('matrixflow_name') || email,
+      token,
+      role: localStorage.getItem('matrixflow_role') || 'member',
+    };
   });
 
-  const login = (email: string, token: string, role: string = 'Admin') => {
+  const login = (email: string, token: string, role = 'member', name = email) => {
     localStorage.setItem('matrixflow_token', token);
     localStorage.setItem('matrixflow_email', email);
     localStorage.setItem('matrixflow_role', role);
-    setUser({ email, role, token });
+    localStorage.setItem('matrixflow_name', name);
+    setUser({ email, name, role, token });
   };
 
   const logout = () => {
     localStorage.removeItem('matrixflow_token');
     localStorage.removeItem('matrixflow_email');
     localStorage.removeItem('matrixflow_role');
+    localStorage.removeItem('matrixflow_name');
     setUser(null);
   };
 
