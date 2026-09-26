@@ -5,7 +5,7 @@ export const appConfig = {
 };
 
 export const getApiUrl = (path = ''): string => {
-  const base = appConfig.apiUrl.replace(/\/$/, '');
+  const base = appConfig.apiUrl.replace(/\/+$/, '').replace(/\/api$/i, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
   return `${base}${normalizedPath}`;
