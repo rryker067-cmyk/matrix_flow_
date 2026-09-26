@@ -38,7 +38,10 @@ function NavigationGroup({ label, icon, items, open, onToggle, collapsed }: { la
 export function AppLayout() {
   const location = useLocation()
   const { logout } = useAuth() // Obtenemos la función para cerrar sesión
-  const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('matrixflow|sidebar') !== 'closed')
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('matrixflow|sidebar') !== 'closed'
+  })
   const companyActive = companyNavigation.some((item) => location.pathname === item.path)
   const analysisActive = analysisNavigation.some((item) => location.pathname === item.path)
   const [companyOpen, setCompanyOpen] = useState(companyActive)
