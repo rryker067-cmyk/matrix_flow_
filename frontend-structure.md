@@ -1,5 +1,10 @@
 # Frontend structure
 
-The frontend is organized by layout, reusable UI, domain components, pages, hooks, services, types, schemas, routes, contexts, mocks, and assets.
+- `src/pages`: home, login, dashboard and the shared data-module screen.
+- `src/components/layout`: application shell and navigation.
+- `src/contexts`: authentication state and hook.
+- `src/services`: HTTP client and API endpoint definitions.
+- `src/lib`: Vite environment configuration.
+- `src/assets`: static assets used by the frontend.
 
-The dashboard is the first implemented slice. Domain folders are intentionally ready for incremental feature work without coupling the UI to an API that has not been defined yet.
+Business records are read and written through FastAPI; the frontend does not connect directly to Supabase. Add domain components, hooks, schemas and types when a feature has an implementation that uses them.

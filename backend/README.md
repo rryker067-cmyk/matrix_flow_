@@ -7,7 +7,7 @@ API FastAPI con SQLAlchemy y PostgreSQL/Supabase. La sesión de base de datos es
 ```bash
 python -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-cp .env.example .env
+test -f .env || cp .env.example .env
 alembic upgrade head
 .venv/bin/uvicorn app.main:app --reload
 ```
@@ -24,12 +24,11 @@ python -m app.utils.create_user
 
 ## Render
 
-El repositorio incluye `render.yaml`. Crea el servicio con **New > Blueprint** y configura los valores marcados `sync: false`:
+El repositorio incluye `render.yaml`. Crea el servicio con **New > Blueprint** y configura la variable privada marcada `sync: false`:
 
 - `DATABASE_URL`: URI PostgreSQL de Supabase, preferiblemente Session Pooler
-- `CORS_ORIGINS`: arreglo JSON con el dominio Vercel, por ejemplo `["https://tu-app.vercel.app"]`
 
-Render genera `JWT_SECRET_KEY`; `JWT_EXPIRE_MINUTES` queda en 480. El servicio usa `backend` como root, instala `requirements.txt`, inicia `uvicorn app.main:app --host 0.0.0.0 --port $PORT` y comprueba `/ready`.
+Render genera `JWT_SECRET_KEY`; `JWT_EXPIRE_MINUTES` queda en 480. `CORS_ORIGINS` ya apunta al dominio de producción en [`render.yaml`](../render.yaml); actualiza ese valor si cambias de dominio Vercel. El servicio usa `backend` como root, instala `requirements.txt`, inicia `uvicorn app.main:app --host 0.0.0.0 --port $PORT` y comprueba `/ready`.
 
 Aplica el esquema una vez con `alembic upgrade head` antes de usar la API. Si ya ejecutaste SQL manual o existen tablas en Supabase, verifica primero `alembic_version` y el esquema; no ejecutes la migración inicial a ciegas porque podría encontrar tablas existentes.
 

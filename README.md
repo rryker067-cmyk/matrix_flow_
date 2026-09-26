@@ -27,10 +27,10 @@ npm run build
 
 ## Variables de entorno
 
-Crea un archivo `.env` a partir de `.env.example`:
+Crea `.env` solo si todavía no existe; si ya existe, conserva sus valores y agrega o actualiza únicamente las variables necesarias:
 
 ```bash
-cp .env.example .env
+test -f .env || cp .env.example .env
 ```
 
 Variables recomendadas:
