@@ -5,6 +5,11 @@ class LoginRequest(BaseModel):
     email: str = Field(min_length=3)
     password: str = Field(min_length=1)
 
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
 
 class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)

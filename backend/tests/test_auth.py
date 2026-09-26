@@ -73,6 +73,29 @@ def test_register_creates_member_and_allows_login():
         settings.jwt_secret_key = old_secret
 
 
+def test_login_normalizes_email_like_registration():
+    old_secret = settings.jwt_secret_key
+    settings.jwt_secret_key = "local-test-signing-key-at-least-32-chars"
+    try:
+        registered = client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "Case Test",
+                "email": "case.test@example.test",
+                "password": "correct-password-123",
+            },
+        )
+        assert registered.status_code == 201
+
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "  CASE.TEST@EXAMPLE.TEST  ", "password": "correct-password-123"},
+        )
+        assert response.status_code == 200
+    finally:
+        settings.jwt_secret_key = old_secret
+
+
 def test_register_rejects_duplicate_email_and_short_password():
     old_secret = settings.jwt_secret_key
     settings.jwt_secret_key = "local-test-signing-key-at-least-32-chars"
