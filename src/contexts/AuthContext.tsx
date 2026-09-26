@@ -1,34 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-
-interface User {
-  email: string;
-  role: string;
-  token: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, token: string, role?: string) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './auth-context';
+import type { AuthUser } from './auth-context';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    // Verificar si hay una sesión guardada en localStorage al cargar
-    const storedToken = localStorage.getItem('matrixflow_token');
-    const storedEmail = localStorage.getItem('matrixflow_email');
-    const storedRole = localStorage.getItem('matrixflow_role') || 'Admin';
-
-    if (storedToken && storedEmail) {
-      setUser({ email: storedEmail, role: storedRole, token: storedToken });
-    }
-  }, []);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem('matrixflow_token');
+    const email = localStorage.getItem('matrixflow_email');
+    if (!token || !email) return null;
+    return { email, token, role: localStorage.getItem('matrixflow_role') || 'user' };
+  });
 
   const login = (email: string, token: string, role: string = 'Admin') => {
     localStorage.setItem('matrixflow_token', token);
@@ -49,12 +31,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
-  }
-  return context;
 };

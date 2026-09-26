@@ -1,16 +1,23 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
-from app.repositories.memory_store import store
+from app.core.database import get_db
+from app.core.security import get_current_user
+from app.repositories.api_record_repository import api_record_repository
 from app.schemas.matrix import Matrix, MatrixCreate
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=list[Matrix])
-def list_matrices() -> list[dict]:
-    return store.matrices
+def list_matrices(db: Session = Depends(get_db)) -> list[dict]:
+    return api_record_repository.list(db, "matrices")
 
 
 @router.post("", response_model=Matrix, status_code=status.HTTP_201_CREATED)
-def create_matrix(payload: MatrixCreate) -> dict:
-    return store.add("matrices", {**payload.model_dump(), "rows": len(payload.values), "columns": len(payload.values[0])})
+def create_matrix(payload: MatrixCreate, db: Session = Depends(get_db)) -> dict:
+    return api_record_repository.create(
+        db,
+        "matrices",
+        {**payload.model_dump(), "rows": len(payload.values), "columns": len(payload.values[0])},
+    )

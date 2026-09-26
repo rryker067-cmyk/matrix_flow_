@@ -1,16 +1,19 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
+from app.core.database import get_db
+from app.core.security import get_current_user
 from app.schemas.sale import Sale, SaleCreate
 from app.services.sale_service import create_sale, list_sales
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=list[Sale])
-def get_sales() -> list[Sale]:
-    return list_sales()
+def get_sales(db: Session = Depends(get_db)) -> list[Sale]:
+    return list_sales(db)
 
 
 @router.post("", response_model=Sale, status_code=status.HTTP_201_CREATED)
-def post_sale(payload: SaleCreate) -> Sale:
-    return create_sale(payload)
+def post_sale(payload: SaleCreate, db: Session = Depends(get_db)) -> Sale:
+    return create_sale(db, payload)

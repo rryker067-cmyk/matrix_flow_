@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext' // Asegúrate de que la ruta apunte correctamente a tu AuthContext
+import { useAuth } from '../../contexts/useAuth'
+import { apiRequest, apiRoutes } from '../../services/api'
 import './nav.css'
 
 type NavigationItem = { label: string; path: string; icon: string }
@@ -37,7 +38,9 @@ function NavigationGroup({ label, icon, items, open, onToggle, collapsed }: { la
 
 export function AppLayout() {
   const location = useLocation()
-  const { logout } = useAuth() // Obtenemos la función para cerrar sesión
+  const { logout, user } = useAuth()
+  const [apiStatus, setApiStatus] = useState('Verificando API')
+  const [companyName, setCompanyName] = useState('Sin empresa')
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('matrixflow|sidebar') !== 'closed'
@@ -46,6 +49,19 @@ export function AppLayout() {
   const analysisActive = analysisNavigation.some((item) => location.pathname === item.path)
   const [companyOpen, setCompanyOpen] = useState(companyActive)
   const [analysisOpen, setAnalysisOpen] = useState(analysisActive)
+
+  useEffect(() => {
+    let active = true
+    void apiRequest<{ status: string; database: string }>(apiRoutes.ready)
+      .then(() => { if (active) setApiStatus('API conectada') })
+      .catch(() => { if (active) setApiStatus('API sin conexión') })
+    void apiRequest<{ name?: string }[]>(`${apiRoutes.resources}/companies`)
+      .then((companies) => {
+        if (active) setCompanyName(companies[0]?.name ?? 'Sin empresa')
+      })
+      .catch(() => { if (active) setCompanyName('Sin empresa') })
+    return () => { active = false }
+  }, [])
 
   const toggleSidebar = () => {
     setSidebarOpen((open) => {
@@ -65,8 +81,8 @@ export function AppLayout() {
         
         {/* Menú de usuario original */}
         <button className="user-menu" aria-label="Abrir menú de usuario" type="button">
-          <span className="avatar">LM</span>
-          <span className="user-summary"><b>Laura Méndez</b><small>Administradora</small></span>
+          <span className="avatar">{user?.email.slice(0, 2).toUpperCase() ?? 'MF'}</span>
+          <span className="user-summary"><b>{user?.email ?? 'Usuario'}</b><small>{user?.role ?? 'Cuenta'}</small></span>
           <span>⌄</span>
         </button>
 
@@ -93,7 +109,7 @@ export function AppLayout() {
     </header>
 
     <aside className="sidebar">
-      <div className="sidebar-workspace"><span className="eyebrow">ESPACIO DE TRABAJO</span><strong>Grupo Horizonte</strong><span>⌄</span></div>
+      <div className="sidebar-workspace"><span className="eyebrow">ESPACIO DE TRABAJO</span><strong>{companyName}</strong><span>⌄</span></div>
       <nav className="navigation" aria-label="Navegación principal">
         <span className="nav-label">PRINCIPAL</span>
         {mainNavigation.map((item) => <NavigationLink key={item.path} item={item} />)}
@@ -107,9 +123,9 @@ export function AppLayout() {
         <NavigationLink item={{ label: 'Usuarios', path: '/usuarios', icon: '♙' }} />
         <NavigationLink item={{ label: 'Configuración', path: '/configuracion', icon: '⚙' }} />
       </nav>
-      <div className="sidebar-footer"><div className="sidebar-status"><i /> API simulada <span>v0.1</span></div><small>MatrixFlow Enterprise<br />Plan maestro · Fase 1</small></div>
+      <div className="sidebar-footer"><div className={`sidebar-status ${apiStatus === 'API conectada' ? 'connected' : 'disconnected'}`}><i /> {apiStatus}</div><small>MatrixFlow Enterprise<br />PostgreSQL · Supabase</small></div>
     </aside>
 
-    <main className="main-content"><div className="page-content"><Outlet /></div><footer className="app-footer"><span>© 2026 MatrixFlow Enterprise</span><span>Fase 1 · Datos simulados</span></footer></main>
+    <main className="main-content"><div className="page-content"><Outlet /></div><footer className="app-footer"><span>© 2026 MatrixFlow Enterprise</span><span>{apiStatus}</span></footer></main>
   </div>
 }

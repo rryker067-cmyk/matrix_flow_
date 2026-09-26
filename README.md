@@ -53,10 +53,12 @@ Este proyecto está preparado para desplegarse en Vercel como SPA. Se incluye `v
   - `VITE_APP_NAME`
   - `VITE_ENV`
 
-## Arquitectura futura
+## Arquitectura
 
 - Frontend: Vercel
 - Backend: Render
 - Base de datos: Supabase
 
-La app frontend está preparada para conectarse a un backend remoto sin romper el despliegue en Vercel.
+El frontend usa `VITE_API_URL` para llamar a FastAPI. Las credenciales de PostgreSQL y JWT solo se configuran en el backend, nunca en Vercel.
+
+Consulta [backend/README.md](backend/README.md) para configurar Supabase, ejecutar migraciones y preparar Render.

@@ -1,13 +1,17 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.database import get_db
 from app.api.routes import api_router
 
 app = FastAPI(title="MatrixFlow Enterprise API", version="0.1.0", description="API de ventas, inventario y algebra lineal empresarial")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,3 +23,9 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/health", tags=["health"])
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "matrixflow-api", "version": app.version}
+
+
+@app.get("/ready", tags=["health"])
+def readiness_check(db: Session = Depends(get_db)) -> dict[str, str]:
+    db.execute(text("SELECT 1"))
+    return {"status": "ok", "database": "connected"}

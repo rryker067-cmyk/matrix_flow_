@@ -1,13 +1,14 @@
-from datetime import UTC, datetime
 from typing import Any
+
+from sqlalchemy.orm import Session
 
 from app.algorithms import matrices, vectors
 from app.core.exceptions import DomainError
-from app.repositories.memory_store import store
+from app.repositories.api_record_repository import api_record_repository
 from app.schemas.operation import OperationRequest
 
 
-def execute_operation(request: OperationRequest) -> dict[str, Any]:
+def execute_operation(request: OperationRequest, db: Session) -> dict[str, Any]:
     operation = request.operation
     if operation == "sum_vector":
         result = vectors.sum_vector(request.data, request.other)  # type: ignore[arg-type]
@@ -34,4 +35,15 @@ def execute_operation(request: OperationRequest) -> dict[str, Any]:
     else:
         raise DomainError(f"Operacion no soportada: {operation}")
 
-    return store.add("operations", {"operation": operation, "result": result, "status": "completed", "executed_at": datetime.now(UTC).isoformat()})
+    from datetime import UTC, datetime
+
+    return api_record_repository.create(
+        db,
+        "operations",
+        {
+            "operation": operation,
+            "result": result,
+            "status": "completed",
+            "executed_at": datetime.now(UTC).isoformat(),
+        },
+    )
