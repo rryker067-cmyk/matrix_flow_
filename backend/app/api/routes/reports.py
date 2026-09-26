@@ -1,16 +1,16 @@
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import require_roles
 from app.models.api_record import ApiRecord
 from app.repositories.api_record_repository import api_record_repository
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
+router = APIRouter(dependencies=[Depends(require_roles("admin", "analyst", "viewer"))])
 
 
 def _number(value: object) -> float:
@@ -26,8 +26,14 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         select(ApiRecord).where(ApiRecord.collection == "sales").order_by(ApiRecord.created_at)
     ).all()
     inventory = api_record_repository.list(db, "inventory")
+    products = api_record_repository.list(db, "products")
+    targets = api_record_repository.list(db, "targets")
+    operations = api_record_repository.list(db, "operations")
     sales_by_month: dict[str, float] = defaultdict(float)
     sales_by_branch: dict[str, float] = defaultdict(float)
+    sales_by_product: dict[str, float] = defaultdict(float)
+    inventory_by_product: dict[str, float] = defaultdict(float)
+    sold_quantity_by_product: dict[str, float] = defaultdict(float)
     months = []
     current = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for offset in range(11, -1, -1):
@@ -45,6 +51,73 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         sales_by_month[timestamp.strftime("%Y-%m")] += amount
         branch = str(record.payload.get("branch", "Sin sucursal"))
         sales_by_branch[branch] += amount
+        product = record.payload.get("product")
+        if product:
+            product_name = str(product)
+            sales_by_product[product_name] += amount
+            sold_quantity_by_product[product_name] += _number(record.payload.get("quantity", 1))
+    for row in inventory:
+        product = str(row.get("product", "Sin producto"))
+        inventory_by_product[product] += _number(row.get("quantity"))
+
+    today = datetime.now(UTC).date()
+    target_progress = []
+    for target in targets:
+        start = date.fromisoformat(str(target["period_start"])[:10])
+        end = date.fromisoformat(str(target["period_end"])[:10])
+        actual_amount = 0.0
+        actual_quantity = 0.0
+        for record in sales:
+            stamp = record.created_at
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=UTC)
+            sale_date = stamp.date()
+            if not start <= sale_date <= end:
+                continue
+            if target.get("branch") and record.payload.get("branch") != target["branch"]:
+                continue
+            if target.get("product") and record.payload.get("product") != target["product"]:
+                continue
+            actual_amount += _number(record.payload.get("amount"))
+            actual_quantity += _number(record.payload.get("quantity", 1))
+        goal = _number(target.get("target_amount")) if target.get("target_amount") is not None else _number(target.get("target_quantity"))
+        actual = actual_amount if target.get("target_amount") is not None else actual_quantity
+        target_progress.append({
+            **target,
+            "actual": actual,
+            "goal": goal,
+            "completion_percent": round((actual / goal) * 100, 1) if goal else 0,
+            "unit": "importe" if target.get("target_amount") is not None else "unidades",
+            "period_active": start <= today <= end,
+        })
+
+    inventory_rotation = []
+    for product in products:
+        name = str(product.get("name", "Sin producto"))
+        stock = _number(product.get("stock"))
+        sold = sold_quantity_by_product.get(name, 0)
+        inventory_rotation.append({
+            "product": name,
+            "stock": stock,
+            "sold_quantity": sold,
+            "rotation": round(sold / stock, 2) if stock else 0,
+        })
+
+    recent_activity = []
+    for record in db.scalars(select(ApiRecord).order_by(ApiRecord.created_at.desc(), ApiRecord.id.desc()).limit(8)):
+        recent_activity.append({
+            "id": record.id,
+            "resource": record.collection,
+            "label": str(record.payload.get("name") or record.payload.get("code") or record.payload.get("operation") or record.payload.get("email") or f"Registro {record.id}"),
+            "created_at": record.created_at.isoformat(),
+            "user_email": record.payload.get("user_email"),
+        })
+
+    thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
+    processed_last_30_days = sum(
+        1 for record in operations
+        if record.get("executed_at") and str(record["executed_at"])[:10] >= thirty_days_ago.date().isoformat()
+    )
     monthly_series = [{"month": month, "total": sales_by_month.get(month, 0)} for month in months]
     return {
         "sales": {"current": sum(_number(row.payload.get("amount")) for row in sales), "records": len(sales)},
@@ -53,6 +126,8 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         "companies": api_record_repository.count(db, "companies"),
         "branches": api_record_repository.count(db, "branches"),
         "products": api_record_repository.count(db, "products"),
+        "targets": len(target_progress),
+        "active_targets": sum(1 for target in target_progress if target["period_active"]),
         "sales_records": len(sales),
         "inventory_records": len(inventory),
         "vectors": api_record_repository.count(db, "vectors"),
@@ -62,4 +137,16 @@ def get_report(db: Session = Depends(get_db)) -> dict:
             {"branch": branch, "total": total}
             for branch, total in sorted(sales_by_branch.items(), key=lambda item: item[1], reverse=True)
         ],
+        "sales_by_product": [
+            {"product": product, "total": total, "quantity": sold_quantity_by_product[product]}
+            for product, total in sorted(sales_by_product.items(), key=lambda item: item[1], reverse=True)
+        ],
+        "inventory_by_product": [
+            {"product": product, "quantity": quantity}
+            for product, quantity in sorted(inventory_by_product.items(), key=lambda item: item[1], reverse=True)
+        ],
+        "inventory_rotation": inventory_rotation,
+        "target_progress": target_progress,
+        "recent_activity": recent_activity,
+        "processing": {"operations_last_30_days": processed_last_30_days},
     }

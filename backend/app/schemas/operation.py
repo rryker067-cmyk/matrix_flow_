@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,3 +23,6 @@ class OperationResponse(BaseModel):
     result: float | list[float] | list[list[float]]
     status: str
     executed_at: str
+    inputs: dict[str, Any] = {}
+    user_id: int | None = None
+    user_email: str | None = None

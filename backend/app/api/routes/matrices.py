@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import require_roles
 from app.repositories.api_record_repository import api_record_repository
 from app.schemas.matrix import Matrix, MatrixCreate
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
+router = APIRouter(dependencies=[Depends(require_roles("admin", "analyst"))])
 
 
 @router.get("", response_model=list[Matrix])

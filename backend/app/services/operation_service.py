@@ -6,9 +6,15 @@ from app.algorithms import matrices, vectors
 from app.core.exceptions import DomainError
 from app.repositories.api_record_repository import api_record_repository
 from app.schemas.operation import OperationRequest
+from app.models.security import User
 
 
-def execute_operation(request: OperationRequest, db: Session) -> dict[str, Any]:
+def execute_operation(
+    request: OperationRequest,
+    db: Session,
+    user: User | None = None,
+    ip_address: str | None = None,
+) -> dict[str, Any]:
     operation = request.operation
     if operation == "sum_vector":
         result = vectors.sum_vector(request.data, request.other)  # type: ignore[arg-type]
@@ -45,5 +51,10 @@ def execute_operation(request: OperationRequest, db: Session) -> dict[str, Any]:
             "result": result,
             "status": "completed",
             "executed_at": datetime.now(UTC).isoformat(),
+            "inputs": request.model_dump(mode="json"),
+            "user_id": user.id if user else None,
+            "user_email": user.email if user else None,
         },
+        user_id=user.id if user and user.id > 0 else None,
+        ip_address=ip_address,
     )

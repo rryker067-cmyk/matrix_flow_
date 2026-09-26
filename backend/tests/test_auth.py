@@ -4,7 +4,7 @@ from app.core.config import settings
 from app.core.security import get_current_user, hash_password
 from app.main import app
 from app.models.security import Role, User
-from tests.conftest import TestSessionLocal
+from tests.conftest import TestSessionLocal, test_admin_user
 
 client = TestClient(app)
 
@@ -40,7 +40,7 @@ def test_login_checks_persisted_user_and_password():
         )
         assert protected.status_code == 200
     finally:
-        app.dependency_overrides[get_current_user] = lambda: None
+        app.dependency_overrides[get_current_user] = lambda: test_admin_user
         settings.jwt_secret_key = old_secret
 
 

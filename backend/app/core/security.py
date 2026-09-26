@@ -71,3 +71,21 @@ def get_current_user(
     if user is None:
         raise unauthorized
     return user
+
+
+def require_roles(*allowed_roles: str):
+    allowed = set(allowed_roles)
+
+    def check_role(user: User = Depends(get_current_user)) -> User:
+        role = user.role.name
+        effective_roles = {role}
+        if role in {"member", "analyst"}:
+            effective_roles.add("analyst")
+        if not effective_roles.intersection(allowed):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tu rol no tiene permiso para esta operación.",
+            )
+        return user
+
+    return check_role

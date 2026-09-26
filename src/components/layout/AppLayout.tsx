@@ -16,6 +16,8 @@ const companyNavigation: NavigationItem[] = [
   { label: 'Resumen de empresa', path: '/empresa', icon: '⌂' },
   { label: 'Sucursales', path: '/sucursales', icon: '⌗' },
   { label: 'Productos', path: '/productos', icon: '□' },
+  { label: 'Categorías', path: '/categorias', icon: '◫' },
+  { label: 'Metas', path: '/metas', icon: '◎' },
 ]
 
 const analysisNavigation: NavigationItem[] = [
@@ -47,6 +49,9 @@ export function AppLayout() {
   })
   const companyActive = companyNavigation.some((item) => location.pathname === item.path)
   const analysisActive = analysisNavigation.some((item) => location.pathname === item.path)
+  const isAdmin = user?.role === 'admin'
+  const canAnalyze = isAdmin || user?.role === 'member' || user?.role === 'analyst'
+  const visibleMainNavigation = mainNavigation.filter((item) => item.path === '/dashboard' || canAnalyze)
   const [companyOpen, setCompanyOpen] = useState(companyActive)
   const [analysisOpen, setAnalysisOpen] = useState(analysisActive)
 
@@ -112,16 +117,13 @@ export function AppLayout() {
       <div className="sidebar-workspace"><span className="eyebrow">ESPACIO DE TRABAJO</span><strong>{companyName}</strong><span>⌄</span></div>
       <nav className="navigation" aria-label="Navegación principal">
         <span className="nav-label">PRINCIPAL</span>
-        {mainNavigation.map((item) => <NavigationLink key={item.path} item={item} />)}
-        <span className="nav-label">GESTIÓN EMPRESARIAL</span>
-        <NavigationGroup label="Empresa" icon="⌂" items={companyNavigation} open={companyOpen} onToggle={() => setCompanyOpen((open) => !open)} collapsed={!sidebarOpen} />
-        <span className="nav-label">ANÁLISIS MATEMÁTICO</span>
-        <NavigationGroup label="Análisis analítico" icon="∑" items={analysisNavigation} open={analysisOpen} onToggle={() => setAnalysisOpen((open) => !open)} collapsed={!sidebarOpen} />
+        {visibleMainNavigation.map((item) => <NavigationLink key={item.path} item={item} />)}
+        {isAdmin && <><span className="nav-label">GESTIÓN EMPRESARIAL</span><NavigationGroup label="Empresa" icon="⌂" items={companyNavigation} open={companyOpen} onToggle={() => setCompanyOpen((open) => !open)} collapsed={!sidebarOpen} /></>}
+        {canAnalyze && <><span className="nav-label">ANÁLISIS MATEMÁTICO</span><NavigationGroup label="Análisis analítico" icon="∑" items={analysisNavigation} open={analysisOpen} onToggle={() => setAnalysisOpen((open) => !open)} collapsed={!sidebarOpen} /></>}
         <span className="nav-label">SISTEMA</span>
-        <NavigationLink item={{ label: 'Historial', path: '/historial', icon: '◷' }} />
+        {canAnalyze && <NavigationLink item={{ label: 'Historial', path: '/historial', icon: '◷' }} />}
         <NavigationLink item={{ label: 'Reportes', path: '/reportes', icon: '▥' }} />
-        <NavigationLink item={{ label: 'Usuarios', path: '/usuarios', icon: '♙' }} />
-        <NavigationLink item={{ label: 'Configuración', path: '/configuracion', icon: '⚙' }} />
+        {isAdmin && <><NavigationLink item={{ label: 'Usuarios', path: '/usuarios', icon: '♙' }} /><NavigationLink item={{ label: 'Configuración', path: '/configuracion', icon: '⚙' }} /></>}
       </nav>
       <div className="sidebar-footer"><div className={`sidebar-status ${apiStatus === 'API conectada' ? 'connected' : 'disconnected'}`}><i /> {apiStatus}</div><small>MatrixFlow Enterprise<br />PostgreSQL · Supabase</small></div>
     </aside>

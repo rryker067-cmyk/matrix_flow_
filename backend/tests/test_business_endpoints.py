@@ -67,3 +67,37 @@ def test_configuration_records_support_persistent_crud():
     assert updated.json()["value"] == "en"
     assert client.delete(f"/api/v1/resources/configurations/{record_id}").status_code == 204
     assert client.get("/api/v1/resources/configurations").json() == []
+
+
+def test_targets_are_persisted_and_reported():
+    from datetime import date
+
+    target = client.post(
+        "/api/v1/resources/targets",
+        json={
+            "name": "Meta mensual",
+            "period_start": date.today().isoformat(),
+            "period_end": date.today().isoformat(),
+            "target_amount": 1000,
+            "branch": "Lima Centro",
+        },
+    )
+    assert target.status_code == 201
+
+    sale = client.post(
+        "/api/v1/sales",
+        json={
+            "code": "TEST-REPORT-1",
+            "branch": "Lima Centro",
+            "customer": "Cliente de prueba",
+            "product": "Laptop",
+            "quantity": 2,
+            "amount": 600,
+        },
+    )
+    assert sale.status_code == 201
+
+    report = client.get("/api/v1/reports").json()
+    assert report["sales_by_product"][0]["product"] == "Laptop"
+    assert report["target_progress"][0]["actual"] == 600
+    assert report["target_progress"][0]["completion_percent"] == 60

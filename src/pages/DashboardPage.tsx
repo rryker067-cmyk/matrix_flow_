@@ -4,6 +4,9 @@ import './dashboard.css'
 
 type MonthlySale = { month: string; total: number }
 type BranchSale = { branch: string; total: number }
+type ProductRotation = { product: string; stock: number; sold_quantity: number; rotation: number }
+type ActivityRecord = { id: number; resource: string; label: string; created_at: string }
+type TargetProgress = { id: number; name: string; actual: number; goal: number; completion_percent: number; unit: string }
 type DashboardReport = {
   sales: { current: number; records: number }
   inventory: { quantity: number; records: number }
@@ -11,6 +14,12 @@ type DashboardReport = {
   companies: number
   branches: number
   products: number
+  targets: number
+  active_targets: number
+  processing: { operations_last_30_days: number }
+  inventory_rotation: ProductRotation[]
+  recent_activity: ActivityRecord[]
+  target_progress: TargetProgress[]
   sales_by_month: MonthlySale[]
   sales_by_branch: BranchSale[]
 }
@@ -22,6 +31,12 @@ const initialReport: DashboardReport = {
   companies: 0,
   branches: 0,
   products: 0,
+  targets: 0,
+  active_targets: 0,
+  processing: { operations_last_30_days: 0 },
+  inventory_rotation: [],
+  recent_activity: [],
+  target_progress: [],
   sales_by_month: [],
   sales_by_branch: [],
 }
@@ -51,7 +66,8 @@ export function DashboardPage() {
     { label: 'Ventas acumuladas', value: currency.format(report.sales.current), detail: `${report.sales.records} registros`, icon: '↗', tone: 'primary' },
     { label: 'Ventas registradas', value: String(report.sales.records), detail: 'Transacciones persistidas', icon: '▤', tone: 'info' },
     { label: 'Unidades en inventario', value: report.inventory.quantity.toLocaleString('es-PE'), detail: `${report.inventory.records} registros`, icon: '◈', tone: 'warning' },
-    { label: 'Operaciones matemáticas', value: String(report.operations.completed), detail: 'Resultados guardados', icon: '⌁', tone: 'success' },
+    { label: 'Metas comerciales', value: String(report.active_targets), detail: `${report.targets} configuradas`, icon: '◎', tone: 'warning' },
+    { label: 'Operaciones recientes', value: String(report.processing.operations_last_30_days), detail: 'Últimos 30 días', icon: '⌁', tone: 'success' },
   ]
 
   return <div className="dashboard-page">
@@ -80,11 +96,9 @@ export function DashboardPage() {
         </div>
         {!loading && report.sales_by_month.every((item) => item.total === 0) && <p className="dashboard-empty">Aún no hay ventas para graficar.</p>}
       </article>
-      <article className="content-card table-card">
-        <div className="card-header"><div><h2>Ventas por sucursal</h2><p>Distribución basada en ventas guardadas</p></div></div>
-        <div className="table-wrap"><table><thead><tr><th>Sucursal</th><th>Ventas</th></tr></thead><tbody>
-          {report.sales_by_branch.map((branch) => <tr key={branch.branch}><td>{branch.branch}</td><td>{currency.format(branch.total)}</td></tr>)}
-        </tbody></table>{!loading && report.sales_by_branch.length === 0 && <p className="dashboard-empty">No hay sucursales con ventas registradas.</p>}</div>
+      <article className="content-card table-card rotation-card">
+        <div className="card-header"><div><h2>Rotación de inventario</h2><p>Unidades vendidas frente al stock disponible</p></div></div>
+        <div className="rotation-list">{report.inventory_rotation.slice(0, 6).map((item) => <div className="rotation-row" key={item.product}><div><span>{item.product}</span><b>{item.rotation.toFixed(2)}×</b></div><small>{item.sold_quantity} vendidas · {item.stock} en stock</small><i><em style={{ width: `${Math.min(100, Math.max(item.rotation * 25, item.stock ? 6 : 0))}%` }} /></i></div>)}{!loading && report.inventory_rotation.length === 0 && <p className="dashboard-empty">Registra productos e inventario para iniciar el análisis de rotación.</p>}</div>
       </article>
     </section>
     <section className="data-grid">
@@ -97,6 +111,14 @@ export function DashboardPage() {
           <tr><td>Inventario</td><td>{loading ? '...' : report.inventory.records}</td></tr>
           <tr><td>Operaciones</td><td>{loading ? '...' : report.operations.completed}</td></tr>
         </tbody></table></div>
+      </article>
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Avance de metas</h2><p>Cumplimiento en el período definido</p></div></div>
+        <div className="dashboard-target-list">{report.target_progress.slice(0, 5).map((target) => <div key={target.id}><div><b>{target.name}</b><span>{target.completion_percent}%</span></div><i><em style={{ width: `${Math.min(100, target.completion_percent)}%` }} /></i><small>{target.actual.toLocaleString('es-PE')} / {target.goal.toLocaleString('es-PE')} {target.unit}</small></div>)}{!loading && report.target_progress.length === 0 && <p className="dashboard-empty">Crea una meta para ver el progreso comercial.</p>}</div>
+      </article>
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Actividad reciente</h2><p>Últimos cambios en el espacio de trabajo</p></div></div>
+        <div className="dashboard-activity-list">{report.recent_activity.slice(0, 6).map((activity) => <div key={`${activity.resource}-${activity.id}`}><span>{activity.resource}</span><b>{activity.label}</b><time>{new Date(activity.created_at).toLocaleString()}</time></div>)}{!loading && report.recent_activity.length === 0 && <p className="dashboard-empty">La actividad aparecerá cuando se registren datos.</p>}</div>
       </article>
     </section>
   </div>
