@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
 import { apiRequest, apiRoutes } from '../services/api'
 import './dashboard.css'
 
 type MonthlySale = { month: string; total: number }
 type BranchSale = { branch: string; total: number }
+type ProductSale = { product: string; total: number; quantity: number }
 type ProductRotation = { product: string; stock: number; sold_quantity: number; rotation: number }
 type ActivityRecord = { id: number; resource: string; label: string; created_at: string }
 type TargetProgress = { id: number; name: string; actual: number; goal: number; completion_percent: number; unit: string; period_active: boolean }
@@ -25,6 +27,7 @@ type DashboardReport = {
   target_progress: TargetProgress[]
   sales_by_month: MonthlySale[]
   sales_by_branch: BranchSale[]
+  sales_by_product: ProductSale[]
 }
 
 const initialReport: DashboardReport = {
@@ -44,6 +47,7 @@ const initialReport: DashboardReport = {
   target_progress: [],
   sales_by_month: [],
   sales_by_branch: [],
+  sales_by_product: [],
 }
 
 const currency = new Intl.NumberFormat('es-PE', {
@@ -59,10 +63,12 @@ export function DashboardPage() {
   const isMember = role === 'member'
   const isAnalyst = role === 'analyst'
   const isViewer = role === 'viewer'
+  const canAnalyze = isAdmin || isMember || isAnalyst
   const [report, setReport] = useState(initialReport)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
+  const [chartRange, setChartRange] = useState<'month' | 'year'>('year')
 
   useEffect(() => {
     apiRequest<DashboardReport>(apiRoutes.reports)
@@ -76,15 +82,17 @@ export function DashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const maxMonthlyTotal = Math.max(...report.sales_by_month.map((item) => item.total), 1)
+  const chartMonths = chartRange === 'month' ? report.sales_by_month.slice(-1) : report.sales_by_month
+  const maxMonthlyTotal = Math.max(...chartMonths.map((item) => item.total), 1)
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const currentMonthSales = report.sales_by_month.find((item) => item.month === currentMonth)?.total ?? 0
   const featuredTarget = report.target_progress.find((target) => target.period_active) ?? report.target_progress[0]
   const featuredTargetProgress = Math.min(100, Math.max(0, featuredTarget?.completion_percent ?? 0))
   const executiveKpis = [
-    { label: 'Ventas acumuladas', value: currency.format(report.sales.current), detail: `${report.sales.records} registros`, icon: '↗', tone: 'primary' },
-    { label: 'Ventas registradas', value: String(report.sales.records), detail: 'Transacciones persistidas', icon: '▤', tone: 'info' },
-    { label: 'Unidades en inventario', value: report.inventory.quantity.toLocaleString('es-PE'), detail: `${report.inventory.records} registros`, icon: '◈', tone: 'warning' },
-    { label: 'Metas comerciales', value: String(report.active_targets), detail: `${report.targets} configuradas`, icon: '◎', tone: 'warning' },
-    { label: 'Operaciones recientes', value: String(report.processing.operations_last_30_days), detail: 'Últimos 30 días', icon: '⌁', tone: 'success' },
+    { label: 'Ventas del mes', value: currency.format(currentMonthSales), detail: 'Importe registrado', icon: '↗', tone: 'primary' },
+    { label: 'Pedidos procesados', value: String(report.sales.records), detail: 'Transacciones persistidas', icon: '▤', tone: 'info' },
+    { label: 'Unidades en inventario', value: report.inventory.quantity.toLocaleString('es-PE'), detail: `${report.inventory.records} movimientos`, icon: '◈', tone: 'warning' },
+    { label: 'Operaciones matemáticas', value: String(report.operations.completed), detail: 'Operaciones guardadas', icon: '⌁', tone: 'success' },
   ]
   const kpis = isAdmin ? executiveKpis : isAnalyst ? [
     { label: 'Operaciones matemáticas', value: String(report.operations.completed), detail: 'Operaciones guardadas', icon: '∑', tone: 'primary' },
@@ -111,6 +119,7 @@ export function DashboardPage() {
     </section>
     <div className="dashboard-heading">
       <div><div className="breadcrumb-line"><span>Inicio</span><span>/</span><b>Dashboard</b></div><h1>{dashboardTitle}</h1><p>{dashboardDescription}</p></div>
+      {!isAnalyst && <div className="heading-actions"><label className="dashboard-period"><span className="sr-only">Período del gráfico</span><select value={chartRange} onChange={(event) => setChartRange(event.target.value as 'month' | 'year')}><option value="month">Este mes</option><option value="year">Últimos 12 meses</option></select></label>{canAnalyze && <Link className="dashboard-action-button" to="/operaciones">＋ Nueva operación</Link>}</div>}
     </div>
     {error && <p className="dashboard-error" role="alert">{error}</p>}
     <section className={`kpi-grid ${kpis.length < 5 ? 'compact-kpis' : ''}`} aria-label="Indicadores del dashboard">
@@ -126,41 +135,47 @@ export function DashboardPage() {
         <div className="sales-chart" role="img" aria-label="Ventas acumuladas por mes durante los últimos doce meses">
           <div className="chart-y-axis"><span>{currency.format(maxMonthlyTotal)}</span><span>{currency.format(maxMonthlyTotal / 2)}</span><span>{currency.format(0)}</span></div>
           <div className="chart-area"><div className="chart-grid-lines"><i /><i /><i /></div><div className="chart-bars">
-            {report.sales_by_month.map((item, index) => <div className="bar-column" key={item.month} title={`${item.month}: ${currency.format(item.total)}`}>
+            {chartMonths.map((item, index) => <div className="bar-column" key={item.month} title={`${item.month}: ${currency.format(item.total)}`}>
               <div className={`chart-bar ${index === report.sales_by_month.length - 1 ? 'current' : ''}`} style={{ height: `${Math.max((item.total / maxMonthlyTotal) * 90, item.total > 0 ? 10 : 0)}%` }} />
               <span>{new Intl.DateTimeFormat('es', { month: 'short' }).format(new Date(`${item.month}-01T00:00:00`))}</span>
             </div>)}
           </div></div>
         </div>
-        {!loading && report.sales_by_month.every((item) => item.total === 0) && <p className="dashboard-empty">Aún no hay ventas para graficar.</p>}
+        {!loading && chartMonths.every((item) => item.total === 0) && <p className="dashboard-empty">Aún no hay ventas para graficar en este período.</p>}
       </article>
-      <article className="content-card table-card rotation-card">
-        <div className="card-header"><div><h2>Rotación de inventario</h2><p>Unidades vendidas acumuladas frente al stock actual</p></div></div>
-        <p className="dashboard-guidance">Fórmula: unidades vendidas ÷ existencias actuales. Registra el mismo producto en Productos, Inventario y Ventas para poder relacionar los datos.</p>
-        <div className="rotation-list">{report.inventory_rotation.slice(0, 6).map((item) => <div className="rotation-row" key={item.product}><div><span>{item.product}</span><b>{item.rotation.toFixed(2)}×</b></div><small>{item.sold_quantity} vendidas · {item.stock} en stock</small><i><em style={{ width: `${Math.min(100, Math.max(item.rotation * 25, item.stock ? 6 : 0))}%` }} /></i></div>)}{!loading && report.inventory_rotation.length === 0 && <p className="dashboard-empty">{report.products === 0 ? 'No hay productos de catálogo. Crea un producto para iniciar el cálculo.' : report.inventory.records === 0 ? 'No hay movimientos de inventario; registra entradas, salidas o ajustes.' : 'Registra ventas con el nombre del producto para calcular las unidades vendidas.'}</p>}</div>
+      <article className="content-card dashboard-target-card">
+        <div className="card-header"><div><h2>Cumplimiento de meta</h2><p>{featuredTarget?.name ?? 'Ventas del período actual'}</p></div></div>
+        {featuredTarget ? <>
+          <div className="dashboard-target-ring-wrap"><div className="dashboard-target-ring" role="img" aria-label={`Cumplimiento de ${featuredTarget.name}: ${featuredTarget.completion_percent}%`} style={{ background: `conic-gradient(var(--blue) ${featuredTargetProgress}%, #303944 ${featuredTargetProgress}% 100%)` }}><div><strong>{featuredTarget.completion_percent.toLocaleString('es-PE')}<small>%</small></strong><span>{featuredTarget.period_active ? 'cumplido' : 'fuera de período'}</span></div></div></div>
+          <div className="dashboard-target-values"><div><span>Actual</span><strong>{currency.format(featuredTarget.actual)}</strong></div><div><span>Objetivo</span><strong>{currency.format(featuredTarget.goal)}</strong></div></div>
+          <div className="dashboard-target-progress"><i><em style={{ width: `${featuredTargetProgress}%` }} /></i><span>Faltan {currency.format(Math.max(0, featuredTarget.goal - featuredTarget.actual))} para alcanzar la meta.</span></div>
+        </> : <div className="dashboard-target-empty"><p>Todavía no hay metas activas para mostrar.</p>{isAdmin && <Link to="/metas">Crear una meta</Link>}</div>}
       </article>
     </section>}
     {isAdmin && <section className="data-grid">
       <article className="content-card table-card">
-        <div className="card-header"><div><h2>Registros sincronizados</h2><p>Conteos leídos de PostgreSQL</p></div></div>
-        <div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Total</th></tr></thead><tbody>
-          <tr><td>Empresas</td><td>{loading ? '...' : report.companies}</td></tr>
-          <tr><td>Sucursales</td><td>{loading ? '...' : report.branches}</td></tr>
-          <tr><td>Productos</td><td>{loading ? '...' : report.products}</td></tr>
-          <tr><td>Inventario</td><td>{loading ? '...' : report.inventory.records}</td></tr>
-          <tr><td>Operaciones</td><td>{loading ? '...' : report.operations.completed}</td></tr>
-        </tbody></table></div>
-      </article>
-      <article className="content-card table-card">
-        <div className="card-header"><div><h2>Avance de metas</h2><p>Ventas dentro del período definido</p></div></div>
-        <p className="dashboard-guidance">Crea una meta con fechas y objetivo de importe o unidades. El avance cuenta ventas del período y aplica los filtros opcionales de sucursal y producto.</p>
-        {featuredTarget && <div className="dashboard-featured-target"><div className="dashboard-target-ring" role="img" aria-label={`Cumplimiento de ${featuredTarget.name}: ${featuredTarget.completion_percent}%`} style={{ background: `conic-gradient(var(--blue) ${featuredTargetProgress}%, #303944 ${featuredTargetProgress}% 100%)` }}><div><strong>{featuredTarget.completion_percent.toLocaleString('es-PE')}<small>%</small></strong><span>{featuredTarget.period_active ? 'En curso' : 'Fuera de período'}</span></div></div><div className="dashboard-target-details"><span>META DESTACADA</span><strong>{featuredTarget.name}</strong><div><small>Actual</small><b>{featuredTarget.actual.toLocaleString('es-PE')} {featuredTarget.unit}</b></div><div><small>Objetivo</small><b>{featuredTarget.goal.toLocaleString('es-PE')} {featuredTarget.unit}</b></div></div></div>}
-        {report.target_progress.length > 1 && <div className="dashboard-target-list">{report.target_progress.filter((target) => target.id !== featuredTarget?.id).slice(0, 3).map((target) => <div key={target.id}><div><b>{target.name}</b><span>{target.completion_percent}%</span></div><i><em style={{ width: `${Math.min(100, target.completion_percent)}%` }} /></i><small>{target.actual.toLocaleString('es-PE')} / {target.goal.toLocaleString('es-PE')} {target.unit}</small></div>)}</div>}
-        {!loading && report.target_progress.length === 0 && <p className="dashboard-empty">Todavía no hay metas. Ve a Metas y crea una con fechas válidas y un objetivo de importe o unidades.</p>}
+        <div className="card-header"><div><h2>Ventas por sucursal</h2><p>Distribución de ingresos registrados</p></div><Link className="dashboard-card-link" to="/reportes">Ver reporte →</Link></div>
+        <div className="table-wrap dashboard-branch-table"><table><thead><tr><th>Sucursal</th><th>Ventas netas</th><th>Participación</th><th>Pedidos</th></tr></thead><tbody>{report.sales_by_branch.slice(0, 5).map((branch) => {
+          const share = report.sales.current ? branch.total / report.sales.current * 100 : 0
+          return <tr key={branch.branch}><td><span className="dashboard-branch-mark">{branch.branch.slice(0, 1).toUpperCase()}</span>{branch.branch}</td><td>{currency.format(branch.total)}</td><td><div className="dashboard-share"><span>{share.toFixed(1)}%</span><i><em style={{ width: `${Math.min(100, share)}%` }} /></i></div></td><td>—</td></tr>
+        })}</tbody></table>{!loading && report.sales_by_branch.length === 0 && <p className="dashboard-empty">Las ventas aparecerán al registrar pedidos por sucursal.</p>}</div>
       </article>
       <article className="content-card table-card">
         <div className="card-header"><div><h2>Actividad reciente</h2><p>Últimos cambios en el espacio de trabajo</p></div></div>
         <div className="dashboard-activity-list">{report.recent_activity.slice(0, 6).map((activity) => <div key={`${activity.resource}-${activity.id}`}><span>{activity.resource}</span><b>{activity.label}</b><time>{new Date(activity.created_at).toLocaleString()}</time></div>)}{!loading && report.recent_activity.length === 0 && <p className="dashboard-empty">La actividad aparecerá cuando se registren datos.</p>}</div>
+      </article>
+    </section>}
+    {isAdmin && <section className="data-grid dashboard-summary-grid">
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Resumen operativo</h2><p>Indicadores clave del espacio</p></div></div>
+        <div className="dashboard-operational-metrics"><div><span>Ticket promedio</span><strong>{currency.format(report.sales.records ? report.sales.current / report.sales.records : 0)}</strong></div><div><span>Metas activas</span><strong>{report.active_targets}</strong></div><div><span>Movimientos de inventario</span><strong>{report.inventory.records}</strong></div><div><span>Operaciones matemáticas</span><strong>{report.operations.completed}</strong></div></div>
+      </article>
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Productos más vendidos</h2><p>Ingresos por producto</p></div></div>
+        <div className="dashboard-top-products">{[...report.sales_by_product].sort((left, right) => right.total - left.total).slice(0, 4).map((product) => {
+          const maxTotal = Math.max(...report.sales_by_product.map((item) => item.total), 1)
+          return <div key={product.product}><div><span>{product.product}</span><b>{currency.format(product.total)}</b></div><small>{product.quantity.toLocaleString('es-PE')} unidades</small><i><em style={{ width: `${Math.max(4, product.total / maxTotal * 100)}%` }} /></i></div>
+        })}{!loading && report.sales_by_product.length === 0 && <p className="dashboard-empty">Las ventas con producto asociado aparecerán aquí.</p>}</div>
       </article>
     </section>}
     {isMember && <section className="data-grid">

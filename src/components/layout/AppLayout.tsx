@@ -79,7 +79,7 @@ export function AppLayout() {
     })
   }
 
-  return <div className={`app-shell ${sidebarOpen ? '' : 'sidebar-collapsed'} ${location.pathname === '/dashboard' ? 'dashboard-theme' : ''}`}>
+  return <div className={`app-shell ${sidebarOpen ? '' : 'sidebar-collapsed'} ${location.pathname === '/dashboard' ? 'dashboard-theme' : ''} ${location.pathname === '/ventas' ? 'sales-theme' : ''}`}>
     <header className="topbar">
       <button className="sidebar-toggle" type="button" onClick={toggleSidebar} aria-label="Mostrar u ocultar menú">☰</button>
       <NavLink className="topbar-brand" to="/dashboard"><span className="brand-mark">M</span><span>MatrixFlow <b>Enterprise</b></span></NavLink>
