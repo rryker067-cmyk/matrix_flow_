@@ -67,6 +67,13 @@ def test_configuration_records_support_persistent_crud():
     assert updated.json()["value"] == "en"
     assert client.delete(f"/api/v1/resources/configurations/{record_id}").status_code == 204
     assert client.get("/api/v1/resources/configurations").json() == []
+    audit = client.get("/api/v1/audit")
+    assert audit.status_code == 200
+    configuration_events = [
+        event for event in audit.json()
+        if event["module"] == "configurations" and event["entity_id"] == record_id
+    ]
+    assert {event["action"] for event in configuration_events} == {"create", "update", "delete"}
 
 
 def test_targets_are_persisted_and_reported():
@@ -101,3 +108,30 @@ def test_targets_are_persisted_and_reported():
     assert report["sales_by_product"][0]["product"] == "Laptop"
     assert report["target_progress"][0]["actual"] == 600
     assert report["target_progress"][0]["completion_percent"] == 60
+
+
+def test_inventory_rotation_uses_net_movements_and_matches_product_names_case_insensitively():
+    product = client.post(
+        "/api/v1/products",
+        json={"name": "Laptop Pro", "category": "Tecnología", "price": 1000, "stock": 99},
+    )
+    assert product.status_code == 201
+    assert client.post(
+        "/api/v1/inventory",
+        json={"product": "laptop pro", "branch": "Centro", "quantity": 10, "movement": "entry"},
+    ).status_code == 201
+    assert client.post(
+        "/api/v1/inventory",
+        json={"product": "Laptop Pro", "branch": "Centro", "quantity": 3, "movement": "exit"},
+    ).status_code == 201
+    assert client.post(
+        "/api/v1/sales",
+        json={"code": "ROT-1", "branch": "Centro", "customer": "Cliente", "product": "LAPTOP PRO", "quantity": 14, "amount": 1400},
+    ).status_code == 201
+
+    report = client.get("/api/v1/reports").json()
+    rotation = report["inventory_rotation"][0]
+    assert rotation["stock"] == 7
+    assert rotation["sold_quantity"] == 14
+    assert rotation["rotation"] == 2
+    assert report["inventory"]["quantity"] == 7

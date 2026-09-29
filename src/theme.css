@@ -1,0 +1,284 @@
+:root {
+  color-scheme: dark;
+  color: #e6eaf0;
+  background: #1c1e20;
+  --navy: #0b1425;
+  --navy-soft: #18263b;
+  --blue: #2867eb;
+  --cyan: #12b8cf;
+  --green: #16a76a;
+  --amber: #d99a19;
+  --red: #ed6262;
+  --ink: #f2f4f7;
+  --muted: #95a1b0;
+  --line: #2b3139;
+  --surface: #121416;
+  --canvas: #1c1e20;
+}
+
+body {
+  background: #1c1e20;
+  color: #e6eaf0;
+}
+
+::selection {
+  background: #2867eb;
+  color: #fff;
+}
+
+.app-shell {
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+.app-shell .sidebar {
+  border-right: 1px solid #202b3a;
+}
+
+.app-shell .page-content {
+  color: var(--ink);
+}
+
+.app-shell .module-card,
+.app-shell .content-card,
+.app-shell .module-form-card,
+.app-shell .operation-form,
+.app-shell .operation-result,
+.app-shell .users-summary,
+.app-shell .report-summary-grid article {
+  border-color: #2b3139;
+  background: #111315;
+  box-shadow: 0 8px 22px #00000018;
+}
+
+.app-shell .module-metric,
+.app-shell .report-summary-grid article {
+  color: var(--ink);
+}
+
+.app-shell .module-form-card {
+  border-left: 3px solid var(--blue);
+}
+
+.app-shell .module-table th,
+.app-shell .table-wrap th {
+  border-color: #30363e;
+  background: #191d21;
+  color: #a5afbc;
+}
+
+.app-shell .module-table td,
+.app-shell .table-wrap td {
+  border-color: #252b31;
+  color: #bbc4ce;
+}
+
+.app-shell .module-table td:first-child,
+.app-shell .table-wrap td:first-child {
+  color: #e5e9ee;
+}
+
+.app-shell .module-table tbody tr:hover,
+.app-shell .module-table tbody tr:hover td {
+  background: #1a1e23;
+}
+
+.app-shell .module-table code,
+.app-shell .operation-result pre,
+.app-shell .history-page pre {
+  border-color: #30363e;
+  background: #181b1f;
+  color: #dce3ec;
+}
+
+.app-shell .module-form-grid input,
+.app-shell .module-form-grid textarea,
+.app-shell .module-actions input,
+.app-shell .operation-field input,
+.app-shell .operation-field select,
+.app-shell .operation-field textarea,
+.app-shell .math-name-field input,
+.app-shell .vector-editor input,
+.app-shell .matrix-editor input,
+.app-shell .users-create-form select,
+.app-shell .users-page td select,
+.app-shell .users-page td input {
+  border-color: #39414c;
+  background: #191c20;
+  color: #edf1f5;
+  color-scheme: dark;
+}
+
+.app-shell input::placeholder,
+.app-shell textarea::placeholder {
+  color: #7f8b9a;
+}
+
+.app-shell input:focus-visible,
+.app-shell select:focus-visible,
+.app-shell textarea:focus-visible,
+.app-shell button:focus-visible,
+.app-shell a:focus-visible {
+  outline-color: #51a0ff;
+}
+
+.app-shell .module-cancel,
+.app-shell .module-export,
+.app-shell .math-record-actions button,
+.app-shell .row-actions button {
+  border-color: #39414c;
+  background: #191c20;
+  color: #c0cad5;
+}
+
+.app-shell .module-cancel:hover,
+.app-shell .module-export:hover,
+.app-shell .math-record-actions button:hover,
+.app-shell .row-actions button:hover {
+  border-color: #3979ee;
+  background: #1b2b45;
+  color: #8bb5ff;
+}
+
+.app-shell .module-empty {
+  color: #a0acba;
+}
+
+.app-shell .module-card-footer {
+  border-color: #292f36;
+  color: #8a96a5;
+}
+
+.app-shell .module-card-footer span {
+  color: #a5b0bc;
+}
+
+.app-shell .module-status {
+  background: #292f36;
+  color: #c4ccd5;
+}
+
+.app-shell .module-status.status-success,
+.app-shell .history-status.success {
+  background: #153b2c;
+  color: #77d8a9;
+}
+
+.app-shell .module-status.status-warning,
+.app-shell .history-status {
+  background: #44351b;
+  color: #f0c56e;
+}
+
+.app-shell .users-notice,
+.app-shell .math-data-notice {
+  border-color: #1f895d;
+  background: #142d23;
+  color: #8bdfb5;
+}
+
+.app-shell .configuration-guide {
+  border-color: #24475a;
+  border-left-color: var(--cyan);
+  background: #17232a;
+  color: #d0d9e2;
+}
+
+.app-shell .configuration-guide ol {
+  color: #aeb9c6;
+}
+
+.app-shell .configuration-history .eyebrow {
+  color: #7f91a5;
+}
+
+.app-shell .history-page summary {
+  color: #75a7ff;
+}
+
+.app-shell .report-summary-grid span,
+.app-shell .report-summary-grid small,
+.app-shell .report-empty-note {
+  color: #a0acba;
+}
+
+.app-shell .report-bar-row i {
+  background: #2b323a;
+}
+
+.app-shell .dashboard-error,
+.app-shell .module-error,
+.app-shell .login-error {
+  border-color: #75434a;
+  background: #3a2529;
+  color: #ffb1b1;
+}
+
+.app-shell .app-footer {
+  border-color: #2b3037;
+  color: #84909f;
+}
+
+.home-container {
+  background: #1c1e20;
+  color: #f2f4f7;
+}
+
+.home-nav {
+  border-color: #2b3139;
+  background: #111315;
+}
+
+.home-brand {
+  color: #6cb8ff;
+}
+
+.home-showcase-card {
+  border-color: #2b3139;
+  background: #111315;
+}
+
+.home-showcase-card:hover {
+  border-color: #3979ee;
+}
+
+.home-section-subtitle,
+.home-description {
+  color: #a0acba;
+}
+
+.login-container {
+  background-color: #1c1e20;
+}
+
+.login-card {
+  border-color: #30363e;
+  border-radius: 8px;
+  background-color: #111315;
+}
+
+.login-tabs {
+  border-color: #30363e;
+  background: #191c20;
+}
+
+.login-tab-btn.active {
+  background: #263246;
+  color: #7eb6ff;
+}
+
+.login-input,
+.login-close {
+  border-color: #39414c;
+  background: #191c20;
+}
+
+@media (max-width: 700px) {
+  .app-shell .module-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell .module-form-card {
+    padding: 15px;
+  }
+}

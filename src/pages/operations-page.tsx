@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useLocation } from 'react-router-dom'
 import { apiRequest, apiRoutes } from '../services/api'
 import './module-page.css'
 import './operations-page.css'
 
 type OperationName = 'sum_vector' | 'subtract_vector' | 'scalar_multiply' | 'dot_product' | 'linear_combination' | 'add_matrix' | 'subtract_matrix' | 'multiply_matrix' | 'transpose_matrix' | 'scalar_multiply_matrix'
 type OperationRecord = { id: number; operation: OperationName; result: number | number[] | number[][]; status: string; executed_at: string }
+type OperationMode = 'operations' | 'linear-combination'
 const options: { value: OperationName; label: string }[] = [
   { value: 'sum_vector', label: 'Suma de vectores' }, { value: 'subtract_vector', label: 'Resta de vectores' },
   { value: 'scalar_multiply', label: 'Multiplicación escalar de vector' }, { value: 'dot_product', label: 'Producto punto' },
@@ -22,9 +22,8 @@ function parseJson(value: string, field: string) {
   try { return JSON.parse(value) as unknown } catch { throw new Error(`${field} debe ser JSON válido.`) }
 }
 
-export function OperationsPage() {
-  const location = useLocation()
-  const initialOperation: OperationName = location.pathname === '/combinaciones-lineales' ? 'linear_combination' : 'dot_product'
+export function OperationsPage({ mode = 'operations' }: { mode?: OperationMode }) {
+  const initialOperation: OperationName = mode === 'linear-combination' ? 'linear_combination' : 'dot_product'
   const [operation, setOperation] = useState<OperationName>(initialOperation)
   const [data, setData] = useState(initialOperation === 'linear_combination' ? '[[1, 2], [3, 4]]' : '[1, 2]')
   const [other, setOther] = useState('[3, 4]')

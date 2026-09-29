@@ -51,8 +51,8 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/vectores" element={<RoleRoute roles={mathRoles}><MathDataPage kind="vectors" /></RoleRoute>} />
             <Route path="/matrices" element={<RoleRoute roles={mathRoles}><MathDataPage kind="matrices" /></RoleRoute>} />
-            <Route path="/operaciones" element={<RoleRoute roles={mathRoles}><OperationsPage /></RoleRoute>} />
-            <Route path="/combinaciones-lineales" element={<RoleRoute roles={mathRoles}><OperationsPage /></RoleRoute>} />
+            <Route path="/operaciones" element={<RoleRoute roles={mathRoles}><OperationsPage key="operations" mode="operations" /></RoleRoute>} />
+            <Route path="/combinaciones-lineales" element={<RoleRoute roles={mathRoles}><OperationsPage key="linear-combination" mode="linear-combination" /></RoleRoute>} />
             <Route path="/ventas" element={<RoleRoute roles={businessRoles}><PlaceholderPage /></RoleRoute>} />
             <Route path="/inventario" element={<RoleRoute roles={businessRoles}><PlaceholderPage /></RoleRoute>} />
             <Route path="/empresa" element={<RoleRoute roles={allRoles}><PlaceholderPage /></RoleRoute>} />

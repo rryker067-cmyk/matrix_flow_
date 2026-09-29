@@ -96,6 +96,13 @@ def update_user(
 		active_admins = db.scalar(select(func.count(User.id)).join(Role).where(Role.name == "admin", User.is_active.is_(True))) or 0
 		if active_admins <= 1:
 			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Debe permanecer al menos un administrador activo.")
+	if payload.email is not None:
+		duplicate = db.scalar(select(User.id).where(func.lower(User.email) == payload.email, User.id != user.id))
+		if duplicate is not None:
+			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe una cuenta con ese correo.")
+		user.email = payload.email
+	if payload.full_name is not None:
+		user.full_name = payload.full_name
 	if payload.role:
 		role = db.scalar(select(Role).where(Role.name == payload.role))
 		if role is None:
@@ -115,7 +122,7 @@ def update_user(
 		entity_id=user.id,
 		status="success",
 		ip_address=request.client.host if request.client else None,
-		details={"role": payload.role, "is_active": payload.is_active, "password_reset": bool(payload.password)},
+		details={"name": payload.full_name, "email": payload.email, "role": payload.role, "is_active": payload.is_active, "password_reset": bool(payload.password)},
 	))
 	try:
 		db.commit()

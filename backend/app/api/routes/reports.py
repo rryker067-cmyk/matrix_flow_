@@ -20,6 +20,10 @@ def _number(value: object) -> float:
         return 0.0
 
 
+def _product_key(value: object) -> str:
+    return str(value or "").strip().casefold()
+
+
 @router.get("")
 def get_report(db: Session = Depends(get_db)) -> dict:
     sales = db.scalars(
@@ -33,6 +37,7 @@ def get_report(db: Session = Depends(get_db)) -> dict:
     sales_by_branch: dict[str, float] = defaultdict(float)
     sales_by_product: dict[str, float] = defaultdict(float)
     inventory_by_product: dict[str, float] = defaultdict(float)
+    inventory_seen: set[str] = set()
     sold_quantity_by_product: dict[str, float] = defaultdict(float)
     months = []
     current = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -55,10 +60,27 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         if product:
             product_name = str(product)
             sales_by_product[product_name] += amount
-            sold_quantity_by_product[product_name] += _number(record.payload.get("quantity", 1))
+            sold_quantity_by_product[_product_key(product_name)] += _number(record.payload.get("quantity", 1))
     for row in inventory:
-        product = str(row.get("product", "Sin producto"))
-        inventory_by_product[product] += _number(row.get("quantity"))
+        product = _product_key(row.get("product"))
+        if not product:
+            continue
+        quantity = _number(row.get("quantity"))
+        movement = row.get("movement", "entry")
+        if movement == "adjustment":
+            inventory_by_product[product] = quantity
+        else:
+            if product not in inventory_seen:
+                inventory_by_product[product] = 0
+            inventory_by_product[product] += -quantity if movement == "exit" else quantity
+        inventory_seen.add(product)
+
+    catalog_stock = {
+        _product_key(product.get("name")): _number(product.get("stock"))
+        for product in products
+        if _product_key(product.get("name"))
+    }
+    current_stock_by_product = {**catalog_stock, **inventory_by_product}
 
     today = datetime.now(UTC).date()
     target_progress = []
@@ -94,13 +116,14 @@ def get_report(db: Session = Depends(get_db)) -> dict:
     inventory_rotation = []
     for product in products:
         name = str(product.get("name", "Sin producto"))
-        stock = _number(product.get("stock"))
-        sold = sold_quantity_by_product.get(name, 0)
+        product_key = _product_key(name)
+        stock = current_stock_by_product.get(product_key, 0)
+        sold = sold_quantity_by_product.get(product_key, 0)
         inventory_rotation.append({
             "product": name,
             "stock": stock,
             "sold_quantity": sold,
-            "rotation": round(sold / stock, 2) if stock else 0,
+            "rotation": round(sold / stock, 2) if stock > 0 else 0,
         })
 
     recent_activity = []
@@ -121,7 +144,7 @@ def get_report(db: Session = Depends(get_db)) -> dict:
     monthly_series = [{"month": month, "total": sales_by_month.get(month, 0)} for month in months]
     return {
         "sales": {"current": sum(_number(row.payload.get("amount")) for row in sales), "records": len(sales)},
-        "inventory": {"quantity": sum(_number(row.get("quantity")) for row in inventory), "records": len(inventory)},
+        "inventory": {"quantity": sum(current_stock_by_product.values()), "records": len(inventory)},
         "operations": {"completed": api_record_repository.count(db, "operations")},
         "companies": api_record_repository.count(db, "companies"),
         "branches": api_record_repository.count(db, "branches"),

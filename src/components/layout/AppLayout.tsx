@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/useAuth'
 import { apiRequest, apiRoutes } from '../../services/api'
 import './nav.css'
 
-type NavigationItem = { label: string; path: string; icon: string }
+type NavigationItem = { label: string; path: string; icon: string; adminOnly?: boolean }
 
 const mainNavigation: NavigationItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: '▦' },
@@ -15,6 +15,7 @@ const mainNavigation: NavigationItem[] = [
 const companyNavigation: NavigationItem[] = [
   { label: 'Sucursales', path: '/sucursales', icon: '⌗' },
   { label: 'Productos', path: '/productos', icon: '□' },
+  { label: 'Metas', path: '/metas', icon: '◎', adminOnly: true },
 ]
 
 const analysisNavigation: NavigationItem[] = [
@@ -28,14 +29,15 @@ function NavigationLink({ item, nested = false }: { item: NavigationItem; nested
   return <NavLink to={item.path} className={({ isActive }) => `nav-item ${nested ? 'nav-item-nested' : ''} ${isActive ? 'active' : ''}`}><span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item.label}</span></NavLink>
 }
 
-function NavigationGroup({ label, icon, items, initialOpen, collapsed }: { label: string; icon: string; items: NavigationItem[]; initialOpen: boolean; collapsed: boolean }) {
+function NavigationGroup({ label, icon, items, initialOpen, collapsed, isAdmin = false }: { label: string; icon: string; items: NavigationItem[]; initialOpen: boolean; collapsed: boolean; isAdmin?: boolean }) {
   const [open, setOpen] = useState(initialOpen)
+  const visibleItems = items.filter((item) => !item.adminOnly || isAdmin)
 
   return <div className={`nav-group ${open ? 'open' : ''}`}>
     <button className="nav-group-trigger" type="button" onClick={() => setOpen((isOpen) => !isOpen)} aria-expanded={open} title={collapsed ? label : undefined}>
       <span className="nav-icon" aria-hidden="true">{icon}</span><span>{label}</span><b aria-hidden="true">⌄</b>
     </button>
-    {open && !collapsed && <div className="nav-group-items" aria-label={label}>{items.map((item) => <NavigationLink key={item.path} item={item} nested />)}</div>}
+    {open && !collapsed && <div className="nav-group-items" aria-label={label}>{visibleItems.map((item) => <NavigationLink key={item.path} item={item} nested />)}</div>}
   </div>
 }
 
@@ -77,7 +79,7 @@ export function AppLayout() {
     })
   }
 
-  return <div className={`app-shell ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
+  return <div className={`app-shell ${sidebarOpen ? '' : 'sidebar-collapsed'} ${location.pathname === '/dashboard' ? 'dashboard-theme' : ''}`}>
     <header className="topbar">
       <button className="sidebar-toggle" type="button" onClick={toggleSidebar} aria-label="Mostrar u ocultar menú">☰</button>
       <NavLink className="topbar-brand" to="/dashboard"><span className="brand-mark">M</span><span>MatrixFlow <b>Enterprise</b></span></NavLink>
@@ -120,7 +122,7 @@ export function AppLayout() {
       <nav className="navigation" aria-label="Navegación principal">
         <span className="nav-label">PRINCIPAL</span>
         {visibleMainNavigation.map((item) => <NavigationLink key={item.path} item={item} />)}
-        <><span className="nav-label">EMPRESA</span><NavigationGroup key={location.pathname} label="Empresa" icon="⌂" items={companyNavigation} initialOpen={companyActive} collapsed={!sidebarOpen} /></>
+        <><span className="nav-label">EMPRESA</span><NavigationGroup key={location.pathname} label="Empresa" icon="⌂" items={companyNavigation} initialOpen={companyActive} collapsed={!sidebarOpen} isAdmin={isAdmin} /></>
         {canAnalyze && <><span className="nav-label">ANÁLISIS MATEMÁTICO</span><NavigationGroup key={location.pathname} label="Análisis matemático" icon="∑" items={analysisNavigation} initialOpen={analysisActive} collapsed={!sidebarOpen} /></>}
         <span className="nav-label">SISTEMA</span>
         {isAdmin && <NavigationLink item={{ label: 'Auditoría', path: '/historial', icon: '◷' }} />}

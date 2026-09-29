@@ -71,6 +71,18 @@ def test_admin_can_create_and_reset_user_password():
         assert default_role_user.json()["role"] == "viewer"
 
         user_id = created.json()["id"]
+        identity_updated = client.patch(
+            f"/api/v1/users/{user_id}",
+            json={"full_name": "  Updated   Name ", "email": "UPDATED@example.test"},
+        )
+        assert identity_updated.status_code == 200
+        assert identity_updated.json()["name"] == "Updated Name"
+        assert identity_updated.json()["email"] == "updated@example.test"
+        duplicate_email = client.patch(
+            f"/api/v1/users/{user_id}",
+            json={"email": "admin-crud@example.test"},
+        )
+        assert duplicate_email.status_code == 409
         updated = client.patch(
             f"/api/v1/users/{user_id}",
             json={"password": "new-password-456", "is_active": True},

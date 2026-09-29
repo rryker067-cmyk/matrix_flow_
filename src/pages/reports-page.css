@@ -1,6 +1,6 @@
 .reports-page { display: grid; gap: 17px; }
 .reports-page .dashboard-heading { margin-bottom: 2px; }
-.report-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.report-summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .report-summary-grid article { display: grid; gap: 7px; min-width: 0; padding: 15px 17px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
 .report-summary-grid span, .report-summary-grid small { color: var(--muted); font-size: 10px; }
 .report-summary-grid strong { color: var(--ink); font-size: 21px; }
