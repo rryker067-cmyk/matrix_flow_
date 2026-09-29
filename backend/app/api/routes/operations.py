@@ -9,15 +9,15 @@ from app.repositories.api_record_repository import api_record_repository
 from app.schemas.operation import OperationRequest, OperationResponse
 from app.services.operation_service import execute_operation
 
-router = APIRouter(dependencies=[Depends(require_roles("admin", "analyst"))])
+router = APIRouter()
 
 
-@router.get("", response_model=list[OperationResponse])
+@router.get("", response_model=list[OperationResponse], dependencies=[Depends(require_roles("admin", "member", "analyst"))])
 def list_operations(db: Session = Depends(get_db)) -> list[dict]:
     return api_record_repository.list(db, "operations")
 
 
-@router.post("", response_model=OperationResponse)
+@router.post("", response_model=OperationResponse, dependencies=[Depends(require_roles("admin", "member", "analyst"))])
 def run_operation(
     payload: OperationRequest,
     request: Request,

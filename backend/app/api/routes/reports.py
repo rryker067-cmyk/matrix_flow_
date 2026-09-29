@@ -10,7 +10,7 @@ from app.core.security import require_roles
 from app.models.api_record import ApiRecord
 from app.repositories.api_record_repository import api_record_repository
 
-router = APIRouter(dependencies=[Depends(require_roles("admin", "analyst", "viewer"))])
+router = APIRouter(dependencies=[Depends(require_roles("admin", "member", "analyst", "viewer"))])
 
 
 def _number(value: object) -> float:

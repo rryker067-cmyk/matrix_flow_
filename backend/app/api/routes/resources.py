@@ -19,7 +19,8 @@ from app.schemas.sale import SaleCreate
 from app.schemas.vector import VectorCreate
 from app.schemas.target import TargetCreate
 
-ANALYST_COLLECTIONS = {"sales", "inventory", "vectors", "matrices", "operations"}
+MEMBER_COLLECTIONS = {"sales", "inventory", "vectors", "matrices", "operations"}
+ANALYST_COLLECTIONS = {"vectors", "matrices", "operations"}
 READ_ONLY_MASTER_COLLECTIONS = {"companies", "branches", "products", "categories"}
 
 
@@ -28,10 +29,12 @@ def authorize_resource(request: Request, user: User = Depends(get_current_user))
     role = user.role.name
     if role == "admin":
         return user
-    if role in {"member", "analyst"}:
-        if collection in ANALYST_COLLECTIONS or (
-            request.method == "GET" and collection in READ_ONLY_MASTER_COLLECTIONS
-        ):
+    if request.method == "GET" and collection in READ_ONLY_MASTER_COLLECTIONS:
+        return user
+    if request.method in {"GET", "POST"}:
+        if role == "member" and collection in MEMBER_COLLECTIONS:
+            return user
+        if role == "analyst" and collection in ANALYST_COLLECTIONS:
             return user
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tu rol no tiene permiso para este recurso.")
 

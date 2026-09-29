@@ -37,7 +37,7 @@ En Vercel configura solo `VITE_API_URL` con la URL pública del servicio Render.
 ## Endpoints iniciales
 
 - `POST /api/v1/auth/login`
-- `POST /api/v1/auth/register` (cuentas nuevas con rol `member`)
+- `POST /api/v1/auth/register` (cuentas nuevas con rol `viewer`)
 - `GET|POST /api/v1/companies`
 - `GET|POST /api/v1/vectors`
 - `GET|POST /api/v1/matrices`
@@ -46,5 +46,8 @@ En Vercel configura solo `VITE_API_URL` con la URL pública del servicio Render.
 - `GET /health`
 - `GET /ready`
 - `GET|POST|PUT|DELETE /api/v1/resources/{collection}`
+- `GET /api/v1/audit` (solo administradores)
 
 Los endpoints de datos requieren `Authorization: Bearer <token>`. El login valida usuarios de la tabla `users`; operaciones, ventas e inventario se persisten y alimentan `/api/v1/reports`.
+
+El rol `admin` puede gestionar todos los módulos y delegar roles desde Usuarios. `member` opera ventas/inventario y matemáticas; `analyst` opera matemáticas y consulta reportes; `viewer` consulta reportes y datos maestros. Las escrituras y cambios de administración se verifican en la API, además de ocultarse en la interfaz.

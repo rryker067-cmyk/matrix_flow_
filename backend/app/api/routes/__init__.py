@@ -12,6 +12,7 @@ from app.api.routes.matrices import router as matrices_router
 from app.api.routes.operations import router as operations_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.resources import router as resources_router
+from app.api.routes.audit import router as audit_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -26,3 +27,4 @@ api_router.include_router(matrices_router, prefix="/matrices", tags=["matrices"]
 api_router.include_router(operations_router, prefix="/operations", tags=["operations"])
 api_router.include_router(reports_router, prefix="/reports", tags=["reports"])
 api_router.include_router(resources_router, prefix="/resources", tags=["resources"])
+api_router.include_router(audit_router, prefix="/audit", tags=["audit"])

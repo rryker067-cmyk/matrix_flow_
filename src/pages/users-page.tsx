@@ -14,7 +14,7 @@ export function UsersPage() {
   const isAdmin = user?.role === 'admin'
   const [rows, setRows] = useState<UserRow[]>([])
   const [changes, setChanges] = useState<Record<number, Partial<UserRow> & { is_active?: boolean; password?: string }>>({})
-  const [draft, setDraft] = useState<Draft>({ name: '', email: '', password: '', role: 'member' })
+  const [draft, setDraft] = useState<Draft>({ name: '', email: '', password: '', role: 'viewer' })
   const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -35,7 +35,7 @@ export function UsersPage() {
   }, [])
   const createUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setSaving(true); setError('')
-    try { await apiRequest(apiRoutes.users, { method: 'POST', body: JSON.stringify({ full_name: draft.name, email: draft.email, password: draft.password, role: draft.role }) }); setDraft({ name: '', email: '', password: '', role: 'member' }); setCreating(false); setNotice('Usuario creado. La contraseña se guarda como hash seguro.'); await reload() }
+    try { await apiRequest(apiRoutes.users, { method: 'POST', body: JSON.stringify({ full_name: draft.name, email: draft.email, password: draft.password, role: draft.role }) }); setDraft({ name: '', email: '', password: '', role: 'viewer' }); setCreating(false); setNotice('Usuario creado. La contraseña se guarda como hash seguro.'); await reload() }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo crear el usuario.') } finally { setSaving(false) }
   }
   const saveUser = async (record: UserRow) => {

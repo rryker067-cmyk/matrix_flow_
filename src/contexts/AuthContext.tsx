@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AuthContext } from './auth-context';
 import type { AuthUser } from './auth-context';
+import { apiRequest, apiRoutes } from '../services/api';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -13,9 +14,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email,
       name: localStorage.getItem('matrixflow_name') || email,
       token,
-      role: localStorage.getItem('matrixflow_role') || 'member',
+      role: localStorage.getItem('matrixflow_role') || 'viewer',
     };
   });
+  const token = user?.token;
+
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    void apiRequest<{ email: string; name: string; role: string }>(apiRoutes.auth.me)
+      .then((profile) => {
+        if (!active) return;
+        localStorage.setItem('matrixflow_role', profile.role);
+        localStorage.setItem('matrixflow_name', profile.name);
+        setUser((current) => current ? { ...current, ...profile } : current);
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [token]);
 
   const login = (email: string, token: string, role = 'member', name = email) => {
     localStorage.setItem('matrixflow_token', token);

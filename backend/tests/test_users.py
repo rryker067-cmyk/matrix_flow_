@@ -59,6 +59,17 @@ def test_admin_can_create_and_reset_user_password():
         assert created.json()["role"] == "analyst"
         assert "password_hash" not in created.json()
 
+        default_role_user = client.post(
+            "/api/v1/users",
+            json={
+                "full_name": "Default Viewer",
+                "email": "default-viewer@example.test",
+                "password": "initial-password-456",
+            },
+        )
+        assert default_role_user.status_code == 201
+        assert default_role_user.json()["role"] == "viewer"
+
         user_id = created.json()["id"]
         updated = client.patch(
             f"/api/v1/users/{user_id}",

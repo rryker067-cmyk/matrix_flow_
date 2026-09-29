@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/useAuth'
 import { apiRequest, apiRoutes } from '../services/api'
 import './module-page.css'
 import './math-data-page.css'
@@ -9,6 +10,8 @@ type Props = { kind: MathKind }
 const cloneGrid = (grid: number[][]) => grid.map(row => [...row])
 
 export function MathDataPage({ kind }: Props) {
+  const { user } = useAuth()
+  const canManage = user?.role === 'admin'
   const isMatrix = kind === 'matrices'
   const title = isMatrix ? 'Matrices' : 'Vectores'
   const [records, setRecords] = useState<MathRecord[]>([])
@@ -88,6 +91,6 @@ export function MathDataPage({ kind }: Props) {
       <div className="module-form-actions">{editingId && <button type="button" className="module-cancel" onClick={reset}>Cancelar edición</button>}<button className="module-primary" disabled={saving}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : `Guardar ${isMatrix ? 'matriz' : 'vector'}`}</button></div>
     </form>
     <div className="module-toolbar"><div className="module-count"><strong>{records.length}</strong> {isMatrix ? 'matrices' : 'vectores'} persistidos</div></div>
-    <div className="module-card"><div className="module-table-wrap"><table className="module-table"><thead><tr><th>Nombre</th><th>Dimensiones</th><th>Valores</th><th>Acciones</th></tr></thead><tbody>{records.map(record => <tr key={record.id}><td>{record.name}</td><td>{isMatrix ? `${(record.values as number[][]).length} × ${(record.values as number[][])[0]?.length ?? 0}` : `${(record.values as number[]).length} componentes`}</td><td><code>{JSON.stringify(record.values)}</code></td><td className="math-record-actions"><button type="button" onClick={() => editRecord(record)} aria-label={`Editar ${record.name}`}>Editar</button><button type="button" onClick={() => void remove(record)} aria-label={`Eliminar ${record.name}`}>Eliminar</button></td></tr>)}</tbody></table>{loading && <div className="module-empty">Consultando Supabase…</div>}{!loading && records.length === 0 && <div className="module-empty">Todavía no hay {title.toLowerCase()} guardados.</div>}</div><div className="module-card-footer">Valores persistidos y disponibles para ejecutar operaciones.</div></div>
+    <div className="module-card"><div className="module-table-wrap"><table className="module-table"><thead><tr><th>Nombre</th><th>Dimensiones</th><th>Valores</th>{canManage && <th>Acciones</th>}</tr></thead><tbody>{records.map(record => <tr key={record.id}><td>{record.name}</td><td>{isMatrix ? `${(record.values as number[][]).length} × ${(record.values as number[][])[0]?.length ?? 0}` : `${(record.values as number[]).length} componentes`}</td><td><code>{JSON.stringify(record.values)}</code></td>{canManage && <td className="math-record-actions"><button type="button" onClick={() => editRecord(record)} aria-label={`Editar ${record.name}`}>Editar</button><button type="button" onClick={() => void remove(record)} aria-label={`Eliminar ${record.name}`}>Eliminar</button></td>}</tr>)}</tbody></table>{loading && <div className="module-empty">Consultando Supabase…</div>}{!loading && records.length === 0 && <div className="module-empty">Todavía no hay {title.toLowerCase()} guardados.</div>}</div><div className="module-card-footer">Valores persistidos y disponibles para ejecutar operaciones.</div></div>
   </section>
 }

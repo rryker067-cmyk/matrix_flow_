@@ -39,12 +39,18 @@ def test_login_checks_persisted_user_and_password():
             headers={"Authorization": f"Bearer {response.json()['access_token']}"},
         )
         assert protected.status_code == 200
+        profile = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+        )
+        assert profile.status_code == 200
+        assert profile.json()["role"] == "admin"
     finally:
         app.dependency_overrides[get_current_user] = lambda: test_admin_user
         settings.jwt_secret_key = old_secret
 
 
-def test_register_creates_member_and_allows_login():
+def test_register_creates_viewer_and_allows_login():
     old_secret = settings.jwt_secret_key
     settings.jwt_secret_key = "local-test-signing-key-at-least-32-chars"
     try:
@@ -60,7 +66,7 @@ def test_register_creates_member_and_allows_login():
         assert response.json()["user"] == {
             "email": "new.member@example.test",
             "name": "New Member",
-            "role": "member",
+            "role": "viewer",
         }
 
         login_response = client.post(

@@ -23,6 +23,18 @@ const ProtectedLayout: React.FC = () => {
   return <AppLayout />;
 };
 
+const RoleRoute: React.FC<{ roles: string[]; children: React.ReactNode }> = ({ roles, children }) => {
+  const { user } = useAuth();
+  if (!user || !roles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
+
+const allRoles = ['admin', 'member', 'analyst', 'viewer'];
+const mathRoles = ['admin', 'member', 'analyst'];
+const businessRoles = ['admin', 'member'];
+
 export default function App() {
   return (
     <AuthProvider>
@@ -37,13 +49,21 @@ export default function App() {
           {/* 3. SISTEMA PRINCIPAL / DASHBOARD PROTEGIDO */}
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/vectores" element={<MathDataPage kind="vectors" />} />
-            <Route path="/matrices" element={<MathDataPage kind="matrices" />} />
-            <Route path="/operaciones" element={<OperationsPage />} />
-            <Route path="/combinaciones-lineales" element={<OperationsPage />} />
-            <Route path="/reportes" element={<ReportsPage />} />
-            <Route path="/usuarios" element={<UsersPage />} />
-            <Route path="/historial" element={<HistoryPage />} />
+            <Route path="/vectores" element={<RoleRoute roles={mathRoles}><MathDataPage kind="vectors" /></RoleRoute>} />
+            <Route path="/matrices" element={<RoleRoute roles={mathRoles}><MathDataPage kind="matrices" /></RoleRoute>} />
+            <Route path="/operaciones" element={<RoleRoute roles={mathRoles}><OperationsPage /></RoleRoute>} />
+            <Route path="/combinaciones-lineales" element={<RoleRoute roles={mathRoles}><OperationsPage /></RoleRoute>} />
+            <Route path="/ventas" element={<RoleRoute roles={businessRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/inventario" element={<RoleRoute roles={businessRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/empresa" element={<RoleRoute roles={allRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/sucursales" element={<RoleRoute roles={allRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/productos" element={<RoleRoute roles={allRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/categorias" element={<RoleRoute roles={allRoles}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/metas" element={<RoleRoute roles={['admin']}><PlaceholderPage /></RoleRoute>} />
+            <Route path="/reportes" element={<RoleRoute roles={allRoles}><ReportsPage /></RoleRoute>} />
+            <Route path="/usuarios" element={<RoleRoute roles={['admin']}><UsersPage /></RoleRoute>} />
+            <Route path="/historial" element={<RoleRoute roles={['admin']}><HistoryPage /></RoleRoute>} />
+            <Route path="/configuracion" element={<RoleRoute roles={['admin']}><PlaceholderPage /></RoleRoute>} />
             <Route path="*" element={<PlaceholderPage />} />
           </Route>
 

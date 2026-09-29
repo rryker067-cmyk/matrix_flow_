@@ -5,12 +5,17 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, get_current_user, hash_password, verify_password
 from app.models.audit import AuditLog
 from app.models.security import Role, User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 
 router = APIRouter()
+
+
+@router.get("/me")
+def current_user(user: User = Depends(get_current_user)) -> dict[str, str]:
+    return {"email": user.email, "name": user.full_name, "role": user.role.name}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -70,9 +75,9 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     if existing_user is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe una cuenta con ese correo.")
 
-    role = db.scalar(select(Role).where(Role.name == "member"))
+    role = db.scalar(select(Role).where(Role.name == "viewer"))
     if role is None:
-        role = Role(name="member", description="Usuario registrado")
+        role = Role(name="viewer", description="Usuario de solo lectura")
         db.add(role)
         db.flush()
 

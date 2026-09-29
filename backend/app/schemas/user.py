@@ -15,7 +15,7 @@ class UserCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)
     email: str = Field(min_length=3, max_length=150)
     password: str = Field(min_length=12, max_length=128)
-    role: Literal["member", "analyst", "viewer", "admin"] = "member"
+    role: Literal["member", "analyst", "viewer", "admin"] = "viewer"
 
     @field_validator("full_name")
     @classmethod

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/useAuth'
 import { apiRequest, apiRoutes } from '../services/api'
 import './dashboard.css'
 
@@ -14,6 +15,8 @@ type DashboardReport = {
   companies: number
   branches: number
   products: number
+  vectors: number
+  matrices: number
   targets: number
   active_targets: number
   processing: { operations_last_30_days: number }
@@ -31,6 +34,8 @@ const initialReport: DashboardReport = {
   companies: 0,
   branches: 0,
   products: 0,
+  vectors: 0,
+  matrices: 0,
   targets: 0,
   active_targets: 0,
   processing: { operations_last_30_days: 0 },
@@ -48,6 +53,12 @@ const currency = new Intl.NumberFormat('es-PE', {
 })
 
 export function DashboardPage() {
+  const { user } = useAuth()
+  const role = user?.role ?? 'viewer'
+  const isAdmin = role === 'admin'
+  const isMember = role === 'member'
+  const isAnalyst = role === 'analyst'
+  const isViewer = role === 'viewer'
   const [report, setReport] = useState(initialReport)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -62,26 +73,43 @@ export function DashboardPage() {
   }, [])
 
   const maxMonthlyTotal = Math.max(...report.sales_by_month.map((item) => item.total), 1)
-  const kpis = [
+  const executiveKpis = [
     { label: 'Ventas acumuladas', value: currency.format(report.sales.current), detail: `${report.sales.records} registros`, icon: '↗', tone: 'primary' },
     { label: 'Ventas registradas', value: String(report.sales.records), detail: 'Transacciones persistidas', icon: '▤', tone: 'info' },
     { label: 'Unidades en inventario', value: report.inventory.quantity.toLocaleString('es-PE'), detail: `${report.inventory.records} registros`, icon: '◈', tone: 'warning' },
     { label: 'Metas comerciales', value: String(report.active_targets), detail: `${report.targets} configuradas`, icon: '◎', tone: 'warning' },
     { label: 'Operaciones recientes', value: String(report.processing.operations_last_30_days), detail: 'Últimos 30 días', icon: '⌁', tone: 'success' },
   ]
+  const kpis = isAdmin ? executiveKpis : isAnalyst ? [
+    { label: 'Operaciones matemáticas', value: String(report.operations.completed), detail: 'Operaciones guardadas', icon: '∑', tone: 'primary' },
+    { label: 'Vectores', value: String(report.vectors), detail: 'Recursos disponibles', icon: '◇', tone: 'info' },
+    { label: 'Matrices', value: String(report.matrices), detail: 'Recursos disponibles', icon: '▧', tone: 'success' },
+  ] : isMember ? [
+    executiveKpis[0], executiveKpis[2], executiveKpis[4],
+  ] : [
+    executiveKpis[0], executiveKpis[1], executiveKpis[2],
+  ]
+  const dashboardTitle = isAdmin ? 'Dashboard ejecutivo' : isMember ? 'Panel operativo' : isAnalyst ? 'Panel de análisis' : 'Panel de reportes'
+  const dashboardDescription = isAdmin
+    ? 'Indicadores completos de operación y administración.'
+    : isMember
+      ? 'Resumen de ventas, inventario y análisis matemático.'
+      : isAnalyst
+        ? 'Actividad de vectores, matrices y operaciones.'
+        : 'Indicadores disponibles en modo de solo lectura.'
 
   return <div className="dashboard-page">
     <div className="dashboard-heading">
-      <div><div className="breadcrumb-line"><span>Inicio</span><span>/</span><b>Dashboard</b></div><h1>Dashboard ejecutivo</h1><p>Indicadores sincronizados con la base de datos.</p></div>
+      <div><div className="breadcrumb-line"><span>Inicio</span><span>/</span><b>Dashboard</b></div><h1>{dashboardTitle}</h1><p>{dashboardDescription}</p></div>
     </div>
     {error && <p className="dashboard-error" role="alert">{error}</p>}
-    <section className="kpi-grid" aria-label="Indicadores ejecutivos">
+    <section className={`kpi-grid ${kpis.length < 5 ? 'compact-kpis' : ''}`} aria-label="Indicadores del dashboard">
       {kpis.map((kpi) => <article className={`stat-card ${kpi.tone}`} key={kpi.label}>
         <div className="stat-card-body"><div><span className="stat-label">{kpi.label}</span><strong>{loading ? '...' : kpi.value}</strong></div><span className="stat-icon">{kpi.icon}</span></div>
         <div className="stat-card-footer"><b>{loading ? 'Consultando' : kpi.detail}</b><span>PostgreSQL</span></div>
       </article>)}
     </section>
-    <section className="chart-grid">
+    {!isAnalyst && <section className="chart-grid">
       <article className="content-card chart-card">
         <div className="card-header"><div><h2>Ventas mensuales</h2><p>Importes agrupados por mes de creación</p></div></div>
         <div className="chart-total"><strong>{loading ? '...' : currency.format(report.sales.current)}</strong><span>{report.sales.records} registros</span></div>
@@ -100,8 +128,8 @@ export function DashboardPage() {
         <div className="card-header"><div><h2>Rotación de inventario</h2><p>Unidades vendidas frente al stock disponible</p></div></div>
         <div className="rotation-list">{report.inventory_rotation.slice(0, 6).map((item) => <div className="rotation-row" key={item.product}><div><span>{item.product}</span><b>{item.rotation.toFixed(2)}×</b></div><small>{item.sold_quantity} vendidas · {item.stock} en stock</small><i><em style={{ width: `${Math.min(100, Math.max(item.rotation * 25, item.stock ? 6 : 0))}%` }} /></i></div>)}{!loading && report.inventory_rotation.length === 0 && <p className="dashboard-empty">Registra productos e inventario para iniciar el análisis de rotación.</p>}</div>
       </article>
-    </section>
-    <section className="data-grid">
+    </section>}
+    {isAdmin && <section className="data-grid">
       <article className="content-card table-card">
         <div className="card-header"><div><h2>Registros sincronizados</h2><p>Conteos leídos de PostgreSQL</p></div></div>
         <div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Total</th></tr></thead><tbody>
@@ -120,6 +148,36 @@ export function DashboardPage() {
         <div className="card-header"><div><h2>Actividad reciente</h2><p>Últimos cambios en el espacio de trabajo</p></div></div>
         <div className="dashboard-activity-list">{report.recent_activity.slice(0, 6).map((activity) => <div key={`${activity.resource}-${activity.id}`}><span>{activity.resource}</span><b>{activity.label}</b><time>{new Date(activity.created_at).toLocaleString()}</time></div>)}{!loading && report.recent_activity.length === 0 && <p className="dashboard-empty">La actividad aparecerá cuando se registren datos.</p>}</div>
       </article>
-    </section>
+    </section>}
+    {isMember && <section className="data-grid">
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Recursos del espacio</h2><p>Datos base disponibles para consulta</p></div></div>
+        <div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Total</th></tr></thead><tbody>
+          <tr><td>Empresas</td><td>{loading ? '...' : report.companies}</td></tr>
+          <tr><td>Sucursales</td><td>{loading ? '...' : report.branches}</td></tr>
+          <tr><td>Productos</td><td>{loading ? '...' : report.products}</td></tr>
+        </tbody></table></div>
+      </article>
+    </section>}
+    {isAnalyst && <section className="data-grid">
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Recursos matemáticos</h2><p>Vectores y matrices disponibles para análisis</p></div></div>
+        <div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Total</th></tr></thead><tbody>
+          <tr><td>Vectores</td><td>{loading ? '...' : report.vectors}</td></tr>
+          <tr><td>Matrices</td><td>{loading ? '...' : report.matrices}</td></tr>
+          <tr><td>Operaciones ejecutadas</td><td>{loading ? '...' : report.operations.completed}</td></tr>
+        </tbody></table></div>
+      </article>
+    </section>}
+    {isViewer && <section className="data-grid">
+      <article className="content-card table-card">
+        <div className="card-header"><div><h2>Resumen de consulta</h2><p>Totales reportados en el espacio</p></div></div>
+        <div className="table-wrap"><table><thead><tr><th>Indicador</th><th>Total</th></tr></thead><tbody>
+          <tr><td>Empresas</td><td>{loading ? '...' : report.companies}</td></tr>
+          <tr><td>Sucursales</td><td>{loading ? '...' : report.branches}</td></tr>
+          <tr><td>Productos</td><td>{loading ? '...' : report.products}</td></tr>
+        </tbody></table></div>
+      </article>
+    </section>}
   </div>
 }

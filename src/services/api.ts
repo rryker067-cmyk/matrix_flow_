@@ -8,6 +8,7 @@ export const apiRoutes = {
   auth: {
     login: getApiUrl('/api/v1/auth/login'),
     register: getApiUrl('/api/v1/auth/register'),
+    me: getApiUrl('/api/v1/auth/me'),
   },
   users: getApiUrl('/api/v1/users'),
   companies: getApiUrl('/api/v1/companies'),
@@ -19,6 +20,7 @@ export const apiRoutes = {
   matrices: getApiUrl('/api/v1/matrices'),
   operations: getApiUrl('/api/v1/operations'),
   reports: getApiUrl('/api/v1/reports'),
+  audit: getApiUrl('/api/v1/audit'),
   resources: getApiUrl('/api/v1/resources'),
 };
 
