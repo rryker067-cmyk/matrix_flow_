@@ -5,7 +5,7 @@ import { apiRequest, apiRoutes } from '../services/api'
 import './dashboard.css'
 
 type MonthlySale = { month: string; total: number }
-type BranchSale = { branch: string; total: number }
+type BranchSale = { branch: string; total: number; orders: number }
 type ProductSale = { product: string; total: number; quantity: number }
 type ProductRotation = { product: string; stock: number; sold_quantity: number; rotation: number }
 type ActivityRecord = { id: number; resource: string; label: string; created_at: string }
@@ -84,10 +84,14 @@ export function DashboardPage() {
 
   const chartMonths = chartRange === 'month' ? report.sales_by_month.slice(-1) : report.sales_by_month
   const maxMonthlyTotal = Math.max(...chartMonths.map((item) => item.total), 1)
+  const chartTotal = chartMonths.reduce((total, item) => total + item.total, 0)
   const currentMonth = new Date().toISOString().slice(0, 7)
   const currentMonthSales = report.sales_by_month.find((item) => item.month === currentMonth)?.total ?? 0
   const featuredTarget = report.target_progress.find((target) => target.period_active) ?? report.target_progress[0]
   const featuredTargetProgress = Math.min(100, Math.max(0, featuredTarget?.completion_percent ?? 0))
+  const formatTargetValue = (value: number) => featuredTarget?.unit === 'importe'
+    ? currency.format(value)
+    : `${value.toLocaleString('es-PE')} unidades`
   const executiveKpis = [
     { label: 'Ventas del mes', value: currency.format(currentMonthSales), detail: 'Importe registrado', icon: '↗', tone: 'primary' },
     { label: 'Pedidos procesados', value: String(report.sales.records), detail: 'Transacciones persistidas', icon: '▤', tone: 'info' },
@@ -99,13 +103,13 @@ export function DashboardPage() {
     { label: 'Vectores', value: String(report.vectors), detail: 'Recursos disponibles', icon: '◇', tone: 'info' },
     { label: 'Matrices', value: String(report.matrices), detail: 'Recursos disponibles', icon: '▧', tone: 'success' },
   ] : isMember ? [
-    executiveKpis[0], executiveKpis[2], executiveKpis[4],
+    executiveKpis[0], executiveKpis[2], executiveKpis[3],
   ] : [
     executiveKpis[0], executiveKpis[1], executiveKpis[2],
   ]
   const dashboardTitle = isAdmin ? 'Dashboard ejecutivo' : isMember ? 'Panel operativo' : isAnalyst ? 'Panel de análisis' : 'Panel de reportes'
   const dashboardDescription = isAdmin
-    ? 'Indicadores completos de operación y administración.'
+    ? 'Resumen de ventas, inventario e indicadores empresariales.'
     : isMember
       ? 'Resumen de ventas, inventario y análisis matemático.'
       : isAnalyst
@@ -131,12 +135,12 @@ export function DashboardPage() {
     {!isAnalyst && <section className="chart-grid">
       <article className="content-card chart-card">
         <div className="card-header"><div><h2>Ventas mensuales</h2><p>Importes agrupados por mes de creación</p></div></div>
-        <div className="chart-total"><strong>{loading ? '...' : currency.format(report.sales.current)}</strong><span>{report.sales.records} registros</span></div>
+        <div className="chart-total"><strong>{loading ? '...' : currency.format(chartTotal)}</strong><span>{chartRange === 'month' ? 'Mes actual' : 'Últimos 12 meses'}</span></div>
         <div className="sales-chart" role="img" aria-label="Ventas acumuladas por mes durante los últimos doce meses">
           <div className="chart-y-axis"><span>{currency.format(maxMonthlyTotal)}</span><span>{currency.format(maxMonthlyTotal / 2)}</span><span>{currency.format(0)}</span></div>
           <div className="chart-area"><div className="chart-grid-lines"><i /><i /><i /></div><div className="chart-bars">
             {chartMonths.map((item, index) => <div className="bar-column" key={item.month} title={`${item.month}: ${currency.format(item.total)}`}>
-              <div className={`chart-bar ${index === report.sales_by_month.length - 1 ? 'current' : ''}`} style={{ height: `${Math.max((item.total / maxMonthlyTotal) * 90, item.total > 0 ? 10 : 0)}%` }} />
+              <div className={`chart-bar ${index === chartMonths.length - 1 ? 'current' : ''}`} style={{ height: `${Math.max((item.total / maxMonthlyTotal) * 90, item.total > 0 ? 10 : 0)}%` }} />
               <span>{new Intl.DateTimeFormat('es', { month: 'short' }).format(new Date(`${item.month}-01T00:00:00`))}</span>
             </div>)}
           </div></div>
@@ -147,8 +151,8 @@ export function DashboardPage() {
         <div className="card-header"><div><h2>Cumplimiento de meta</h2><p>{featuredTarget?.name ?? 'Ventas del período actual'}</p></div></div>
         {featuredTarget ? <>
           <div className="dashboard-target-ring-wrap"><div className="dashboard-target-ring" role="img" aria-label={`Cumplimiento de ${featuredTarget.name}: ${featuredTarget.completion_percent}%`} style={{ background: `conic-gradient(var(--blue) ${featuredTargetProgress}%, #303944 ${featuredTargetProgress}% 100%)` }}><div><strong>{featuredTarget.completion_percent.toLocaleString('es-PE')}<small>%</small></strong><span>{featuredTarget.period_active ? 'cumplido' : 'fuera de período'}</span></div></div></div>
-          <div className="dashboard-target-values"><div><span>Actual</span><strong>{currency.format(featuredTarget.actual)}</strong></div><div><span>Objetivo</span><strong>{currency.format(featuredTarget.goal)}</strong></div></div>
-          <div className="dashboard-target-progress"><i><em style={{ width: `${featuredTargetProgress}%` }} /></i><span>Faltan {currency.format(Math.max(0, featuredTarget.goal - featuredTarget.actual))} para alcanzar la meta.</span></div>
+          <div className="dashboard-target-values"><div><span>Actual</span><strong>{formatTargetValue(featuredTarget.actual)}</strong></div><div><span>Objetivo</span><strong>{formatTargetValue(featuredTarget.goal)}</strong></div></div>
+          <div className="dashboard-target-progress"><i><em style={{ width: `${featuredTargetProgress}%` }} /></i><span>Faltan {formatTargetValue(Math.max(0, featuredTarget.goal - featuredTarget.actual))} para alcanzar la meta.</span></div>
         </> : <div className="dashboard-target-empty"><p>Todavía no hay metas activas para mostrar.</p>{isAdmin && <Link to="/metas">Crear una meta</Link>}</div>}
       </article>
     </section>}
@@ -157,7 +161,7 @@ export function DashboardPage() {
         <div className="card-header"><div><h2>Ventas por sucursal</h2><p>Distribución de ingresos registrados</p></div><Link className="dashboard-card-link" to="/reportes">Ver reporte →</Link></div>
         <div className="table-wrap dashboard-branch-table"><table><thead><tr><th>Sucursal</th><th>Ventas netas</th><th>Participación</th><th>Pedidos</th></tr></thead><tbody>{report.sales_by_branch.slice(0, 5).map((branch) => {
           const share = report.sales.current ? branch.total / report.sales.current * 100 : 0
-          return <tr key={branch.branch}><td><span className="dashboard-branch-mark">{branch.branch.slice(0, 1).toUpperCase()}</span>{branch.branch}</td><td>{currency.format(branch.total)}</td><td><div className="dashboard-share"><span>{share.toFixed(1)}%</span><i><em style={{ width: `${Math.min(100, share)}%` }} /></i></div></td><td>—</td></tr>
+          return <tr key={branch.branch}><td><span className="dashboard-branch-mark">{branch.branch.slice(0, 1).toUpperCase()}</span>{branch.branch}</td><td>{currency.format(branch.total)}</td><td><div className="dashboard-share"><span>{share.toFixed(1)}%</span><i><em style={{ width: `${Math.min(100, share)}%` }} /></i></div></td><td>{branch.orders}</td></tr>
         })}</tbody></table>{!loading && report.sales_by_branch.length === 0 && <p className="dashboard-empty">Las ventas aparecerán al registrar pedidos por sucursal.</p>}</div>
       </article>
       <article className="content-card table-card">

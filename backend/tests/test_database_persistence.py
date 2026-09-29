@@ -56,5 +56,5 @@ def test_report_metrics_are_aggregated_from_persisted_records():
     report = response.json()
     assert report["sales"]["current"] == 250
     assert report["inventory"]["quantity"] == 12
-    assert report["sales_by_branch"] == [{"branch": "Centro", "total": 250}]
+    assert report["sales_by_branch"] == [{"branch": "Centro", "total": 250, "orders": 1}]
     assert len(report["sales_by_month"]) == 12

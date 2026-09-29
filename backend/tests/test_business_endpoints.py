@@ -106,6 +106,7 @@ def test_targets_are_persisted_and_reported():
 
     report = client.get("/api/v1/reports").json()
     assert report["sales_by_product"][0]["product"] == "Laptop"
+    assert report["sales_by_branch"][0]["orders"] == 1
     assert report["target_progress"][0]["actual"] == 600
     assert report["target_progress"][0]["completion_percent"] == 60
 

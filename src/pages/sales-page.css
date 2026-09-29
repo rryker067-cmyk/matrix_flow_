@@ -1,9 +1,16 @@
 .sales-theme {
+  --navy: #0b1425;
+  --navy-soft: #18263b;
+  --blue: #2867eb;
+  --cyan: #12b8cf;
+  --green: #16a76a;
+  --amber: #d99a19;
   --ink: #f0f2f5;
   --muted: #8a96a5;
   --line: #2b3037;
   --surface: #111315;
   --canvas: #1c1e20;
+  font-family: 'Manrope', sans-serif;
   background: var(--canvas);
   color: var(--ink);
 }
@@ -15,7 +22,7 @@
 
 .sales-theme .page-content {
   max-width: 1660px;
-  padding-top: 30px;
+  padding-top: 22px;
 }
 
 .sales-theme .app-footer {
@@ -25,7 +32,7 @@
 
 .sales-page {
   display: grid;
-  gap: 22px;
+  gap: 18px;
   color: #edf0f4;
 }
 
@@ -53,7 +60,7 @@
 .sales-heading h1 {
   margin: 0 0 5px;
   color: #f5f6f8;
-  font-size: 25px;
+  font-size: 24px;
 }
 
 .sales-heading p {
@@ -106,7 +113,7 @@
 .sales-activity {
   min-width: 0;
   border: 1px solid #252a30;
-  border-radius: 8px;
+  border-radius: 7px;
   background: #111315;
   box-shadow: 0 10px 24px #00000018;
 }

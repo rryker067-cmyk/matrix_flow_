@@ -35,6 +35,7 @@ def get_report(db: Session = Depends(get_db)) -> dict:
     operations = api_record_repository.list(db, "operations")
     sales_by_month: dict[str, float] = defaultdict(float)
     sales_by_branch: dict[str, float] = defaultdict(float)
+    sales_count_by_branch: dict[str, int] = defaultdict(int)
     sales_by_product: dict[str, float] = defaultdict(float)
     inventory_by_product: dict[str, float] = defaultdict(float)
     inventory_seen: set[str] = set()
@@ -56,6 +57,7 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         sales_by_month[timestamp.strftime("%Y-%m")] += amount
         branch = str(record.payload.get("branch", "Sin sucursal"))
         sales_by_branch[branch] += amount
+        sales_count_by_branch[branch] += 1
         product = record.payload.get("product")
         if product:
             product_name = str(product)
@@ -157,7 +159,7 @@ def get_report(db: Session = Depends(get_db)) -> dict:
         "matrices": api_record_repository.count(db, "matrices"),
         "sales_by_month": monthly_series,
         "sales_by_branch": [
-            {"branch": branch, "total": total}
+            {"branch": branch, "total": total, "orders": sales_count_by_branch[branch]}
             for branch, total in sorted(sales_by_branch.items(), key=lambda item: item[1], reverse=True)
         ],
         "sales_by_product": [
